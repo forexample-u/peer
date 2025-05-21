@@ -35,7 +35,7 @@ public class PeerController : ControllerBase
 
         // remove old messages
         long nowSecondUnix = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
-        ulong fileHash = HashHelper.Hash(fileName + fileSizeBytes.ToString());
+        ulong fileHash = fileSizeBytes == 0 ? 0 : HashHelper.Hash(fileName + fileSizeBytes.ToString());
         long sizeFiles = 0;
         bool isUniqueFile = fileSizeBytes > 0;
         foreach (var keyValue in messages)
