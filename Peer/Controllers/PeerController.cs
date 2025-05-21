@@ -9,7 +9,6 @@ namespace Peer.Controllers;
 public class PeerController : ControllerBase
 {
     public static Dictionary<long, Data> messages = new Dictionary<long, Data>();
-    public static Dictionary<uint, byte[]> files = new Dictionary<uint, byte[]>();
 
     [HttpPost("write")]
     public long Write(Message message)
@@ -26,27 +25,44 @@ public class PeerController : ControllerBase
         long smallFileSizeBytes = Config.SmallFileSizeBytes;
 
         // if not correct not save file or text
-        int fileSizeBytes = message?.Bytes?.Length ?? 0;
+        long fileSizeBytes = message?.File?.Length ?? 0;
+        string fileName = message?.File?.FileName ?? "";
+        string contentType = message?.File?.ContentType ?? "";
         if (message == null || message.Id < 0 || fileSizeBytes > maxOneFileSize || message.Text.Length > maxLengthText || messages.ContainsKey(message.Id))
         {
-            Array.Clear(message?.Bytes ?? [], 0, fileSizeBytes);
             return 0;
         }
 
-        // set bytes by hash
-        uint fileHash = 0;
-        if (fileSizeBytes == 0 || files.ContainsKey(fileHash))
+        // remove old messages
+        long nowSecondUnix = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+        ulong fileHash = HashHelper.Hash(fileName + fileSizeBytes.ToString());
+        long sizeFiles = 0;
+        bool isUniqueFile = fileSizeBytes > 0;
+        foreach (var keyValue in messages)
         {
-            Array.Clear(message.Bytes, 0, fileSizeBytes);
-        }
-        else
-        {
-            fileHash = (uint)HashHelper.Hash(message.Bytes);
-            files[fileHash] = message.Bytes;
+            sizeFiles += keyValue.Value.FileSizeOfBytes;
+            if (keyValue.Value.DeleteUnixAt < nowSecondUnix)
+            {
+                string fullpath = Path.Combine("files", keyValue.Value.Filename);
+                messages.Remove(keyValue.Key);
+                System.IO.File.Delete(fullpath);
+            }
+            if (keyValue.Value.Filehash == fileHash)
+            {
+                isUniqueFile = false;
+            }
         }
 
-        long sizeFiles = files.Sum(x => x.Value.LongLength);
-        long nowSecondUnix = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+        // set bytes by hash
+        if (isUniqueFile)
+        {
+            string filePath = Path.Combine("wwwroot", "files", fileHash.ToString() + "_" + fileName);
+            using (FileStream stream = new FileStream(filePath, FileMode.Create))
+            {
+                message.File.CopyTo(stream);
+            }
+        }
+
         long debufSubtSecond = sizeFiles < minDebufSizeBytes ? 0 : debufSecond;
         long addSecond = bigMessageSecond;
         if (message.Text.Length <= smallTextLength && fileSizeBytes <= smallFileSizeBytes)
@@ -54,27 +70,14 @@ public class PeerController : ControllerBase
             addSecond = messages.Count > 100 ? smallMessageSecond : first100SmallMessageSecond;
         }
         long deleteSecondUnix = nowSecondUnix + addSecond - debufSubtSecond;
-
-        // delete old messages
-        foreach (var keyValue in messages)
-        {
-            if (keyValue.Value.DeleteUnixAt < nowSecondUnix)
-            {
-                uint hash = keyValue.Value.Filehash;
-                Array.Clear(files[hash], 0, files[hash].Length);
-                files.Remove(hash);
-                messages.Remove(keyValue.Key);
-            }
-        }
-
-        messages[message.Id] = new Data(message.Text, fileHash, message?.Filename ?? "", deleteSecondUnix);
+        messages[message.Id] = new Data(message.Text, fileHash, fileName, deleteSecondUnix, contentType, fileSizeBytes);
         return deleteSecondUnix;
     }
 
     [HttpGet("write/{id}/{text}")]
     public long Write(long id, string text)
     {
-        return Write(new Message() { Bytes = Array.Empty<byte>(), Text = text, Id = id });
+        return Write(new Message() { Text = text, Id = id });
     }
 
     [HttpGet("get/{id}")]
@@ -92,10 +95,8 @@ public class PeerController : ControllerBase
     {
         if (messages.TryGetValue(id, out Data? data))
         {
-            string fileName = Path.GetFileName(data.Filename ?? "");
-            string extension = Path.GetExtension(fileName ?? "");
-            string contentType = WebHelper.GetContentTypeByExtension(extension);
-            return File(files[data.Filehash], contentType, fileName);
+            string fullPath = Path.Combine("files", data.Filehash.ToString() + "_" + data.Filename);
+            return File(fullPath, data.ContentType, data.Filename);
         }
         return NotFound();
     }
