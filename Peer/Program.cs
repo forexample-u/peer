@@ -4,7 +4,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.Configure<Peer.Config>(builder.Configuration.GetSection("PeerConfig"));
 
-string dirPath = Path.Combine("wwwroot", "files");
+string dirPath = Path.Combine("wwwroot", "peer");
 if (Directory.Exists(dirPath))
 {
     Directory.Delete(dirPath, true);

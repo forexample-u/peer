@@ -7,7 +7,7 @@ public static class HashHelper
         ulong hash = 5381;
         foreach (char ch in input)
         {
-            hash = (hash << 5) + hash + ch;
+            hash = hash * 33 + ch;
         }
         return hash;
     }

@@ -43,9 +43,12 @@ public class PeerController : ControllerBase
             sizeFiles += keyValue.Value.FileSizeOfBytes;
             if (keyValue.Value.DeleteUnixAt < nowSecondUnix)
             {
-                string fullpath = Path.Combine("files", keyValue.Value.Filename);
+                string fullpath = Path.Combine("wwwroot", "peer", keyValue.Key.ToString() + Path.GetExtension(keyValue.Value.Filename));
                 messages.Remove(keyValue.Key);
-                System.IO.File.Delete(fullpath);
+                if (System.IO.File.Exists(fullpath))
+                {
+                    System.IO.File.Delete(fullpath);
+                }
             }
             if (keyValue.Value.Filehash == fileHash)
             {
@@ -56,7 +59,7 @@ public class PeerController : ControllerBase
         // set bytes by hash
         if (isUniqueFile)
         {
-            string filePath = Path.Combine("wwwroot", "files", fileHash.ToString() + "_" + fileName);
+            string filePath = Path.Combine("wwwroot", "peer", message.Id.ToString() + Path.GetExtension(message?.File?.FileName ?? ""));
             using (FileStream stream = new FileStream(filePath, FileMode.Create))
             {
                 message.File.CopyTo(stream);
@@ -95,7 +98,7 @@ public class PeerController : ControllerBase
     {
         if (messages.TryGetValue(id, out Data? data))
         {
-            string fullPath = Path.Combine("files", data.Filehash.ToString() + "_" + data.Filename);
+            string fullPath = Path.Combine("peer", id.ToString() + Path.GetExtension(data.Filename));
             return File(fullPath, data.ContentType, data.Filename);
         }
         return NotFound();
@@ -107,9 +110,11 @@ public class PeerController : ControllerBase
         return messages.Where(x => x.Value.Filehash == 0).Select(x => $"{x.Key}:{x.Value.DeleteUnixAt}");
     }
 
-    [HttpGet("ids")]
-    public IEnumerable<long> Ids()
+    [HttpGet("getfilepath/{id}")]
+    public string GetFilePath(long id)
     {
-        return messages.Where(x => x.Value.Filehash == 0).Select(x => x.Key);
+        messages.TryGetValue(id, out Data? data);
+        string extension = Path.GetExtension(data?.Filename ?? "");
+        return data == null ? "" : "peer/" + id.ToString() + extension;
     }
 }
