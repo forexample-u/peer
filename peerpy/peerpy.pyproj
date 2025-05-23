@@ -28,6 +28,7 @@
     <Compile Include="utils\hash_helper.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="config.json" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
