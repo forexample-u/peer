@@ -35,9 +35,9 @@ public class PeerController : ControllerBase
 
         // remove old messages
         long nowSecondUnix = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
-        ulong fileHash = fileSizeBytes == 0 ? 0 : HashHelper.Hash(fileName + fileSizeBytes.ToString());
+        ulong fileHash = HashHelper.Hash(fileName + fileSizeBytes.ToString());
         long sizeFiles = 0;
-        bool isUniqueFile = fileSizeBytes > 0;
+        bool isUniqueFile = fileName != "";
         foreach (var keyValue in messages)
         {
             sizeFiles += keyValue.Value.FileSizeOfBytes;
@@ -86,11 +86,8 @@ public class PeerController : ControllerBase
     [HttpGet("get/{id}")]
     public string Get(long id)
     {
-        if (messages.TryGetValue(id, out Data? value))
-        {
-            return value.Text;
-        }
-        return "";
+        messages.TryGetValue(id, out Data? data);
+        return data?.Text ?? "";
     }
 
     [HttpGet("getfile/{id}")]
@@ -104,17 +101,16 @@ public class PeerController : ControllerBase
         return NotFound();
     }
 
-    [HttpGet("list")]
-    public IEnumerable<string> List()
-    {
-        return messages.Where(x => x.Value.Filehash == 0).Select(x => $"{x.Key}:{x.Value.DeleteUnixAt}");
-    }
-
     [HttpGet("getfilepath/{id}")]
     public string GetFilePath(long id)
     {
         messages.TryGetValue(id, out Data? data);
-        string extension = Path.GetExtension(data?.Filename ?? "");
-        return data == null ? "" : "peer/" + id.ToString() + extension;
+        return data?.FileSizeOfBytes > 0 ? "peer/" + id.ToString() + Path.GetExtension(data.Filename) : "";
+    }
+
+    [HttpGet("list")]
+    public IEnumerable<string> List()
+    {
+        return messages.Where(x => x.Value.Filehash == 0).Select(x => $"{x.Key}:{x.Value.DeleteUnixAt}");
     }
 }
