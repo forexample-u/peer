@@ -2,13 +2,13 @@
 
 public class Config
 {
-    public static long MaxOneFileSize { get; set; } = 3145728;
-    public static long MinDebufSizeBytes { get; set; } = 28000000;
-    public static long MaxLengthText { get; set; } = 1048576;
-    public static long DebufSecond { get; set; } = 53;
-    public static long BigMessageSecond { get; set; } = 60;
-    public static long SmallMessageSecond { get; set; } = 960;
-    public static long First100SmallMessageSecond { get; set; } = 86400;
-    public static long SmallTextLength { get; set; } = 5000;
-    public static long SmallFileSizeBytes { get; set; } = 10240;
+    public static int MaxSizeOneQuery { get; set; } = 3200000;
+    public static int MaxSizeText { get; set; } = 1050000;
+    public static int Limit1 { get; set; } = 28000000;
+    public static int Limit1BigMessageSecond { get; set; } = 60;
+    public static int Limit1SmallMessageSecond { get; set; } = 960;
+    public static int Limit1SmallSizeOneQuery { get; set; } = 120000;
+    public static int LimitOtherBigMessageSecond { get; set; } = 7;
+    public static int LimitOtherSmallMessageSecond { get; set; } = 65;
+    public static int LimitOtherSmallSizeOneQuery { get; set; } = 5100;
 }
