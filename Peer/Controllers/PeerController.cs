@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Peer.Domain;
-using Peer.Utils;
 using System.Collections.Concurrent;
+using System.Text.Json;
 
 namespace Peer.Controllers;
 
@@ -9,65 +9,27 @@ namespace Peer.Controllers;
 [Route("peer")]
 public class PeerController : ControllerBase
 {
-    public static ConcurrentDictionary<long, Data> messages = new ConcurrentDictionary<long, Data>();
+    public static ConcurrentDictionary<long, Block> Blocks = new();
+    public static List<Data> Messages = new();
     public static long CountQuery = 0;
     public static long SizeAllQuery = 0;
+    public static long SizeAllText = 0;
+    public static long BlockIndex = 0;
 
     [HttpPost("write")]
     public long Write(Message message)
     {
-        // settings
-        long maxSizeOneQuery = Config.MaxSizeOneQuery;
-        long maxSizeText = Config.MaxSizeText;
-        long limit1 = Config.Limit1;
-        long limit1BigMessageSecond = Config.Limit1BigMessageSecond;
-        long limit1SmallMessageSecond = Config.Limit1SmallMessageSecond;
-        long limit1SmallSizeOneQuery = Config.Limit1SmallSizeOneQuery;
-        long limitOtherBigMessageSecond = Config.LimitOtherBigMessageSecond;
-        long limitOtherSmallMessageSecond = Config.LimitOtherSmallMessageSecond;
-        long limitOtherSmallSizeOneQuery = Config.LimitOtherSmallSizeOneQuery;
-
-        // if not correct not save file or text
         string fileName = message?.File?.FileName ?? "";
         string contentType = message?.File?.ContentType ?? "";
         long fileSize = message?.File?.Length ?? 0;
         long textSize = message?.Text?.Length ?? 0;
         long querySize = fileSize + textSize;
-        if (message == null || message.Id < 0 || querySize > maxSizeOneQuery || textSize > maxSizeText || messages.ContainsKey(message.Id))
+        if (message == null || message.Id < 0 || querySize > Config.MaxSizeOneQuery || textSize > Config.MaxSizeText || Blocks.ContainsKey(message.Id))
         {
             return 0;
         }
 
-        // remove old messages
-        long nowSecondUnix = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
-        ulong fileHash = HashHelper.Hash(fileName + fileSize.ToString());
-        bool isUniqueFile = fileName != "";
-        List<long> keysToRemove = new List<long>();
-        foreach (var keyValue in messages)
-        {
-            if (keyValue.Value.DeleteUnixAt < nowSecondUnix)
-            {
-                string fullpath = Path.Combine("wwwroot", "peer", keyValue.Key.ToString() + Path.GetExtension(keyValue.Value.Filename));
-                if (System.IO.File.Exists(fullpath))
-                {
-                    System.IO.File.Delete(fullpath);
-                }
-                keysToRemove.Add(keyValue.Key);
-                SizeAllQuery -= keyValue.Value.FileSizeOfBytes + keyValue.Value.Text.Length;
-            }
-        }
-        foreach (long key in keysToRemove)
-        {
-            messages.TryRemove(key, out Data data);
-        }
-        if (CountQuery % 1000 == 0)
-        {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-        }
-
-        // set bytes by hash
-        if (isUniqueFile)
+        if (fileName != "")
         {
             string filePath = Path.Combine("wwwroot", "peer", message.Id.ToString() + Path.GetExtension(fileName));
             using (FileStream stream = new FileStream(filePath, FileMode.Create))
@@ -76,20 +38,87 @@ public class PeerController : ControllerBase
             }
         }
 
-        long addSecond = limitOtherBigMessageSecond;
-        if (SizeAllQuery <= limit1)
-        {
-            addSecond = querySize > limit1SmallSizeOneQuery ? limit1BigMessageSecond : limit1SmallMessageSecond;
-        }
-        else
-        {
-            addSecond = querySize > limitOtherSmallSizeOneQuery ? limitOtherBigMessageSecond : limitOtherSmallMessageSecond;
-        }
-        long deleteSecondUnix = nowSecondUnix + addSecond;
-        messages[message.Id] = new Data(message.Text, fileHash, fileName, deleteSecondUnix, contentType, fileSize);
-        SizeAllQuery += querySize;
+        // remove old messages
+        long nowUnix = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
         CountQuery += 1;
-        return deleteSecondUnix;
+        if (CountQuery % 10 == 0)
+        {
+            Dictionary<long, List<long>> deleteList = new();
+            foreach (var blockId in Blocks)
+            {
+                if (blockId.Value.DeleteUnix < nowUnix)
+                {
+                    if (!deleteList.ContainsKey(blockId.Value.Index))
+                    {
+                        deleteList[blockId.Value.Index] = new();
+                    }
+                    deleteList[blockId.Value.Index].Add(blockId.Key);
+                }
+            }
+            foreach (var indexDelete in deleteList)
+            {
+                string path = Path.Combine("data", "text", indexDelete.Key.ToString());
+                if (!System.IO.File.Exists(path)) continue;
+                List<Data> datas = JsonSerializer.Deserialize<List<Data>>(System.IO.File.ReadAllText(path));
+                List<long> deleteIds = new List<long>();
+                long sizeQuery = 0;
+                foreach (long id in indexDelete.Value)
+                {
+                    Data deleteData = datas.FirstOrDefault(x => x.Id == id);
+                    if (deleteData != null)
+                    {
+                        string fullpath = Path.Combine("wwwroot", "peer", id.ToString() + Path.GetExtension(deleteData.Filename ?? ""));
+                        if (System.IO.File.Exists(fullpath))
+                        {
+                            System.IO.File.Delete(fullpath);
+                        }
+                        sizeQuery += deleteData.Text.Length + deleteData.FileSizeOfBytes;
+                        datas.Remove(deleteData);
+                        deleteIds.Add(id);
+                    }
+                }
+                try
+                {
+                    if (datas.Count > 0)
+                    {
+                        System.IO.File.WriteAllText(path, JsonSerializer.Serialize(datas));
+                    }
+                    else
+                    {
+                        System.IO.File.Delete(path);
+                    }
+                    foreach (long id in deleteIds)
+                    {
+                        Blocks.TryRemove(id, out Block _);
+                    }
+                    SizeAllQuery -= sizeQuery;
+                } catch { }
+                datas.Clear();
+            }
+            deleteList.Clear();
+        }
+
+        if (SizeAllText > 1000000)
+        {
+            SizeAllText = 0;
+            System.IO.File.WriteAllText(Path.Combine("data", "text", BlockIndex.ToString()), JsonSerializer.Serialize(Messages));
+            Messages.Clear();
+            BlockIndex += 1;
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
+
+        long addSecond = querySize > Config.LimitOtherSmallSizeOneQuery ? Config.LimitOtherBigMessageSecond : Config.LimitOtherSmallMessageSecond;
+        if (SizeAllQuery <= Config.Limit1)
+        {
+            addSecond = querySize > Config.Limit1SmallSizeOneQuery ? Config.Limit1BigMessageSecond : Config.Limit1SmallMessageSecond;
+        }
+        Data newData = new(message.Id, message.Text, 0, fileName, nowUnix + addSecond, contentType, fileSize);
+        Blocks[newData.Id] = new Block(BlockIndex, newData.DeleteUnixAt);
+        Messages.Add(newData);
+        SizeAllQuery += querySize;
+        SizeAllText += textSize;
+        return newData.DeleteUnixAt;
     }
 
     [HttpGet("write/{id}/{text}")]
@@ -101,14 +130,14 @@ public class PeerController : ControllerBase
     [HttpGet("get/{id}")]
     public string Get(long id)
     {
-        messages.TryGetValue(id, out Data? data);
-        return data?.Text ?? "";
+        return GetData(id)?.Text ?? "";
     }
 
     [HttpGet("getfile/{id}")]
     public IActionResult GetFile(long id)
     {
-        if (messages.TryGetValue(id, out Data? data))
+        Data data = GetData(id);
+        if (data != null)
         {
             string fullPath = Path.Combine("peer", id.ToString() + Path.GetExtension(data.Filename));
             return File(fullPath, data.ContentType, data.Filename);
@@ -119,13 +148,28 @@ public class PeerController : ControllerBase
     [HttpGet("getfilepath/{id}")]
     public string GetFilePath(long id)
     {
-        messages.TryGetValue(id, out Data? data);
+        Data data = GetData(id);
         return (data?.Filename?.Length ?? 0) == 0 ? "" : "peer/" + id.ToString() + Path.GetExtension(data.Filename);
     }
 
-    [HttpGet("list")]
-    public IEnumerable<string> List()
+    private Data GetData(long id)
     {
-        return messages.Where(x => x.Value.Filehash == 0).Select(x => $"{x.Key}:{x.Value.DeleteUnixAt}");
+        Data findData = Messages.FirstOrDefault(x => x.Id == id);
+        if (findData != null)
+        {
+            return findData;
+        }
+
+        if (Blocks.TryGetValue(id, out Block block))
+        {
+            string path = Path.Combine("data", "text", block.Index.ToString());
+            if (System.IO.File.Exists(path))
+            {
+                string json = System.IO.File.ReadAllText(path);
+                Data[] datas = JsonSerializer.Deserialize<Data[]>(json);
+                return datas.FirstOrDefault(x => x.Id == id);
+            }
+        }
+        return null;
     }
 }

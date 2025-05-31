@@ -2,8 +2,9 @@
 
 public class Data
 {
-    public Data(string text, ulong filehash, string filename, long deleteUnixAt, string contentType, long fileSizeOfBytes)
+    public Data(long id, string text, ulong filehash, string filename, long deleteUnixAt, string contentType, long fileSizeOfBytes)
     {
+        Id = id;
         Text = text;
         Filehash = filehash;
         Filename = filename;
@@ -12,6 +13,7 @@ public class Data
         FileSizeOfBytes = fileSizeOfBytes;
     }
 
+    public long Id { get; set; }
     public string Text { get; set; }
     public ulong Filehash { get; set; }
     public string Filename { get; set; }

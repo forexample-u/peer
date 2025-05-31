@@ -11,6 +11,13 @@ if (Directory.Exists(dirPath))
 }
 Directory.CreateDirectory(dirPath);
 
+dirPath = Path.Combine("data", "text");
+if (Directory.Exists(dirPath))
+{
+    Directory.Delete(dirPath, true);
+}
+Directory.CreateDirectory(dirPath);
+
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
