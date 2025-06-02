@@ -4,19 +4,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.Configure<Peer.Config>(builder.Configuration.GetSection("PeerConfig"));
 
-string dirPath = Path.Combine("wwwroot", "peer");
-if (Directory.Exists(dirPath))
-{
-    Directory.Delete(dirPath, true);
-}
-Directory.CreateDirectory(dirPath);
-
-dirPath = Path.Combine("data", "text");
-if (Directory.Exists(dirPath))
-{
-    Directory.Delete(dirPath, true);
-}
-Directory.CreateDirectory(dirPath);
+Directory.CreateDirectory(Path.Combine("wwwroot", "peer"));
+Directory.CreateDirectory(Path.Combine("data", "text"));
 
 var app = builder.Build();
 if (app.Environment.IsDevelopment())

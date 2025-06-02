@@ -4,6 +4,7 @@ public class Config
 {
     public static int MaxSizeOneQuery { get; set; } = 3200000;
     public static int MaxSizeText { get; set; } = 1050000;
+    public static int AvgSizeBlock { get; set; } = 1050000;
     public static int Limit1 { get; set; } = 28000000;
     public static int Limit1BigMessageSecond { get; set; } = 60;
     public static int Limit1SmallMessageSecond { get; set; } = 960;
