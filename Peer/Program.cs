@@ -1,11 +1,10 @@
+Directory.CreateDirectory(Path.Combine("wwwroot", "peer"));
+Directory.CreateDirectory(Path.Combine("data", "text"));
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.Configure<Peer.Config>(builder.Configuration.GetSection("PeerConfig"));
-
-Directory.CreateDirectory(Path.Combine("wwwroot", "peer"));
-Directory.CreateDirectory(Path.Combine("data", "text"));
 
 var app = builder.Build();
 if (app.Environment.IsDevelopment())

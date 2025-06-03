@@ -1,4 +1,5 @@
 ﻿using Peer.Domain;
+using Peer.Utils;
 using System.Collections.Concurrent;
 using System.Text.Json;
 
@@ -6,10 +7,6 @@ namespace Peer.Application;
 
 public class Minidb
 {
-    private readonly string _textPath;
-    private readonly string _filePath;
-    private bool _isLockByCommit = false;
-    private bool _isLockByShrink = false;
     public Minidb(string textPath, string filePath, long blockStartIndex = 0)
     {
         _textPath = textPath;
@@ -18,10 +15,14 @@ public class Minidb
         Load();
     }
 
-    private List<Data> BlockMessage = new();
-    private ConcurrentDictionary<long, Block> Blocks = new();
+    private readonly string _textPath;
+    private readonly string _filePath;
+    private bool _isLockByCommit = false;
+    private bool _isLockByShrink = false;
+    private List<Data> _blockData = new();
+    private ConcurrentDictionary<long, Block> _blocks = new();
     public long BlockIndex { get; private set; } = 0;
-    public long BlockSizeInBytes { get; private set; } = 0;
+    public long BlockInBytes { get; private set; } = 0;
     public long SizeAllBlockInBytes { get; private set; } = 0;
 
     public long Write(Message message)
@@ -31,12 +32,12 @@ public class Minidb
         long fileSize = message.File?.Length ?? 0;
         long textSize = message.Text?.Length ?? 0;
         long querySize = textSize + fileSize;
-        if (message == null || querySize > Config.MaxSizeOneQuery || textSize > Config.MaxSizeText || Blocks.ContainsKey(message.Id))
+        if (textSize > Config.MaxSizeText || querySize > Config.MaxSizeOneQuery || _blocks.ContainsKey(message.Id))
         {
             return 0;
         }
 
-        if (!string.IsNullOrEmpty(fileName))
+        if (fileName != "")
         {
             string filePath = Path.Combine(_filePath, message.Id.ToString() + Path.GetExtension(fileName));
             using (FileStream stream = new FileStream(filePath, FileMode.Create))
@@ -51,38 +52,30 @@ public class Minidb
             addSecond = querySize > Config.Limit1SmallSizeOneQuery ? Config.Limit1BigMessageSecond : Config.Limit1SmallMessageSecond;
         }
         long deleteUnixAt = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() + addSecond;
-        Data data = new(message.Id, message.Text, 0, fileName, deleteUnixAt, contentType, fileSize);
-        Blocks[message.Id] = new Block(BlockIndex, deleteUnixAt);
-        BlockMessage.Add(data);
+        _blockData.Add(new Data(message.Id, message.Text, 0, fileName, deleteUnixAt, contentType, fileSize));
+        _blocks[message.Id] = new Block(BlockIndex, deleteUnixAt);
         SizeAllBlockInBytes += querySize;
-        BlockSizeInBytes += textSize;
+        BlockInBytes += querySize;
         return deleteUnixAt;
     }
 
     public Data Get(long id)
     {
-        for (int i = 0; i < BlockMessage.Count; i++)
+        for (int i = _blockData.Count - 1; i >= 0; i--)
         {
-            if (BlockMessage[i].Id == id)
+            if (_blockData[i].Id == id)
             {
-                return BlockMessage[i];
+                return _blockData[i];
             }
         }
 
-        if (Blocks.TryGetValue(id, out Block? block))
+        if (_blocks.TryGetValue(id, out Block? block))
         {
             string path = Path.Combine(_textPath, block.Index.ToString());
             if (File.Exists(path))
             {
-                string json = ReadAllText(path);
-                Data[] datas = JsonSerializer.Deserialize<Data[]>(json) ?? Array.Empty<Data>();
-                for (int i = 0; i < datas.Length; i++)
-                {
-                    if (datas[i].Id == id)
-                    {
-                        return datas[i];
-                    }
-                }
+                List<Data> datas = JsonSerializer.Deserialize<List<Data>>(FileHelper.ReadAllText(path)) ?? new List<Data>();
+                return datas.FirstOrDefault(x => x.Id == id);
             }
         }
         return null;
@@ -90,48 +83,29 @@ public class Minidb
 
     public void Shrink()
     {
+        if (_isLockByShrink) return;
+        _isLockByShrink = true;
         try
         {
-            if (_isLockByShrink == false)
+            long nowUnix = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+            HashSet<long> indexes = new();
+            foreach (var block in _blocks.Values)
             {
-                _isLockByShrink = true;
-                long nowUnix = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
-                for (int i = BlockMessage.Count - 1; i >= 0; i--)
+                if (block.DeleteUnixAt < nowUnix)
                 {
-                    if (BlockMessage[i].DeleteUnixAt < nowUnix)
-                    {
-                        string fullpath = Path.Combine(_filePath, BlockMessage[i].Id.ToString() + Path.GetExtension(BlockMessage[i].Filename ?? ""));
-                        if (File.Exists(fullpath))
-                        {
-                            File.Delete(fullpath);
-                        }
-                        SizeAllBlockInBytes -= BlockMessage[i].Text.Length + BlockMessage[i].FileSizeOfBytes;
-                        BlockSizeInBytes -= BlockMessage[i].Text.Length;
-                        BlockMessage.RemoveAt(i);
-                    }
+                    indexes.Add(block.Index);
                 }
-
-                HashSet<long> indexes = new();
-                foreach (var block in Blocks)
-                {
-                    if (block.Value.DeleteUnix < nowUnix)
-                    {
-                        indexes.Add(block.Value.Index);
-                    }
-                }
-                foreach (long index in indexes)
+            }
+            foreach (long index in indexes)
+            {
+                try
                 {
                     string path = Path.Combine(_textPath, index.ToString());
                     if (!File.Exists(path)) continue;
-                    List<Data> datas = new List<Data>();
-                    try
-                    {
-                        datas = JsonSerializer.Deserialize<List<Data>>(ReadAllText(path)) ?? new List<Data>();
-                    }
-                    catch { }
-                    long sizeQuery = 0;
+                    long sizeReduced = 0;
                     List<long> deleteIds = new List<long>();
-                    for (int i = 0; i < datas.Count; i++)
+                    List<Data> datas = JsonSerializer.Deserialize<List<Data>>(FileHelper.ReadAllText(path)) ?? new List<Data>();
+                    for (int i = datas.Count - 1; i >= 0; i--)
                     {
                         Data data = datas[i];
                         if (data.DeleteUnixAt < nowUnix)
@@ -141,104 +115,61 @@ public class Minidb
                             {
                                 File.Delete(fullpath);
                             }
-                            sizeQuery += data.Text.Length + data.FileSizeOfBytes;
+                            sizeReduced += data.Text.Length + data.FileSizeOfBytes;
                             deleteIds.Add(data.Id);
                             datas.RemoveAt(i);
-                            i--;
                         }
                     }
-                    try
+                    if (datas.Count > 0)
                     {
-                        if (datas.Count > 0)
-                        {
-                            WriteAllText(path, JsonSerializer.Serialize(datas));
-                        }
-                        else
-                        {
-                            File.Delete(path);
-                        }
-                        foreach (long id in deleteIds)
-                        {
-                            Blocks.TryRemove(id, out Block _);
-                        }
-                        SizeAllBlockInBytes -= sizeQuery;
+                        FileHelper.WriteAllText(path, JsonSerializer.Serialize(datas));
                     }
-                    catch { }
-                }
-                _isLockByShrink = false;
+                    else
+                    {
+                        File.Delete(path);
+                    }
+                    foreach (long id in deleteIds)
+                    {
+                        _blocks.TryRemove(id, out Block _);
+                    }
+                    SizeAllBlockInBytes -= sizeReduced;
+                } catch { }
             }
-        }
-        catch
-        {
-            _isLockByShrink = false;
-        }
+        } catch { }
+        _isLockByShrink = false;
     }
 
     public void Commit()
     {
+        if (_isLockByCommit) return;
+        _isLockByCommit = true;
         try
         {
-            if (_isLockByCommit == false)
+            string path = Path.Combine(_textPath, BlockIndex.ToString());
+            BlockIndex += 1;
+            if (!File.Exists(path))
             {
-                _isLockByCommit = true;
-                string path = Path.Combine(_textPath, BlockIndex.ToString());
-                if (!File.Exists(path))
-                {
-                    string json = JsonSerializer.Serialize(BlockMessage);
-                    int blockCount = BlockMessage.Count;
-                    WriteAllText(path, json);
-                    BlockSizeInBytes = 0;
-                    BlockMessage.RemoveRange(0, blockCount);
-                }
-                BlockIndex += 1;
-                _isLockByCommit = false;
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
+                int blockCount = _blockData.Count;
+                FileHelper.WriteAllText(path, JsonSerializer.Serialize(_blockData));
+                _blockData.RemoveRange(0, blockCount);
+                BlockInBytes = 0;
             }
-        }
-        catch
-        {
-            _isLockByCommit = false;
-        }
-    }
-
-    private void WriteAllText(string path, string? contents)
-    {
-        using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
-        {
-            using (var writer = new StreamWriter(stream))
-            {
-                writer.Write(contents);
-            }
-        }
-    }
-
-    private string ReadAllText(string path)
-    {
-        using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-        {
-            using (var reader = new StreamReader(stream))
-            {
-                return reader.ReadToEnd();
-            }
-        }
+        } catch { }
+        _isLockByCommit = false;
     }
 
     public void Load()
     {
-        string[] filePaths = Directory.GetFiles(_textPath);
-        foreach (string filePath in filePaths)
+        foreach (string filePath in Directory.GetFiles(_textPath))
         {
             if (long.TryParse(filePath.Split('\\', '/').Last(), out long blockIndex))
             {
-                Data[] datas = JsonSerializer.Deserialize<Data[]>(ReadAllText(filePath)) ?? Array.Empty<Data>();
+                List<Data> datas = JsonSerializer.Deserialize<List<Data>>(FileHelper.ReadAllText(filePath)) ?? new List<Data>();
                 foreach (Data data in datas)
                 {
-                    if (data != null)
-                    {
-                        Blocks[data.Id] = new Block(blockIndex, data.DeleteUnixAt);
-                        SizeAllBlockInBytes += data.Text.Length + data.FileSizeOfBytes;
-                    }
+                    if (data == null) continue;
+                    _blocks[data.Id] = new Block(blockIndex, data.DeleteUnixAt);
+                    SizeAllBlockInBytes += data.Text.Length + data.FileSizeOfBytes;
                 }
                 BlockIndex = blockIndex > BlockIndex ? blockIndex : BlockIndex;
             }

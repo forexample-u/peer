@@ -8,7 +8,7 @@ namespace Peer.Controllers;
 [Route("peer")]
 public class PeerController : ControllerBase
 {
-    private static Minidb _db = new Minidb(Path.Combine("data", "text"), Path.Combine("wwwroot", "peer"), 0);
+    private static Minidb _db = new Minidb(Path.Combine("data", "text"), Path.Combine("wwwroot", "peer"));
     public static long CountQuery = 0;
 
     [HttpPost("write")]
@@ -19,7 +19,7 @@ public class PeerController : ControllerBase
         {
             _db.Shrink();
         }
-        if (_db.BlockSizeInBytes > Config.AvgSizeBlock)
+        if (_db.BlockInBytes > Config.AvgSizeBlock)
         {
             _db.Commit();
         }
