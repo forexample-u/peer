@@ -9,12 +9,14 @@ namespace Peer.Controllers;
 public class PeerController : ControllerBase
 {
     private static Minidb _db = new Minidb(Path.Combine("data", "text"), Path.Combine("wwwroot", "peer"));
-    public static DateTime NextCommitTime = DateTime.UtcNow.AddMinutes(1);
+    public static DateTime NextCommitTime = DateTime.UtcNow.AddSeconds(Config.CommitBlockSecond);
     public static long CountQuery = 0;
 
     [HttpPost("write")]
     public long Write(Message message)
     {
+        long deleteUnixAt = _db.Write(message);
+        if (deleteUnixAt <= 0) return deleteUnixAt;
         CountQuery += 1;
         if (CountQuery % 20 == 0)
         {
@@ -22,10 +24,10 @@ public class PeerController : ControllerBase
         }
         if (_db.BlockInBytes > Config.AvgSizeBlock || DateTime.UtcNow > NextCommitTime)
         {
+            NextCommitTime = DateTime.UtcNow.AddSeconds(Config.CommitBlockSecond);
             _db.Commit();
-            NextCommitTime = DateTime.UtcNow.AddMinutes(1.0);
         }
-        return _db.Write(message);
+        return deleteUnixAt;
     }
 
     [HttpGet("write/{id}/{text}")]

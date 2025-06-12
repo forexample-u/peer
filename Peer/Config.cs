@@ -1,15 +1,39 @@
-﻿namespace Peer;
+﻿using Newtonsoft.Json.Linq;
+
+namespace Peer;
 
 public class Config
 {
-    public static int MaxSizeOneQuery { get; set; } = 3200000;
-    public static int MaxSizeText { get; set; } = 1050000;
-    public static int AvgSizeBlock { get; set; } = 1050000;
-    public static int Limit1 { get; set; } = 28000000;
-    public static int Limit1BigMessageSecond { get; set; } = 60;
-    public static int Limit1SmallMessageSecond { get; set; } = 960;
-    public static int Limit1SmallSizeOneQuery { get; set; } = 120000;
-    public static int LimitOtherBigMessageSecond { get; set; } = 7;
-    public static int LimitOtherSmallMessageSecond { get; set; } = 65;
-    public static int LimitOtherSmallSizeOneQuery { get; set; } = 5100;
+    public static int MaxSizeOneQuery { get; set; }
+    public static int MaxSizeText { get; set; }
+    public static int Limit1 { get; set; }
+    public static int Limit1BigMessageSecond { get; set; }
+    public static int Limit1SmallMessageSecond { get; set; }
+    public static int Limit1SmallSizeOneQuery { get; set; }
+    public static int LimitOtherBigMessageSecond { get; set; }
+    public static int LimitOtherSmallMessageSecond { get; set; }
+    public static int LimitOtherSmallSizeOneQuery { get; set; }
+    public static string? FilePath { get; set; }
+    public static string? TextPath { get; set; }
+    public static int CommitBlockSecond { get; set; }
+    public static int AvgSizeBlock { get; set; }
+
+    public static void Load(string fileName = "appsettings.json")
+    {
+        var config = JObject.Parse(File.ReadAllText(fileName))["PeerMain"];
+        MaxSizeOneQuery = Convert.ToInt32(config["MaxSizeOneQuery"]);
+        MaxSizeText = Convert.ToInt32(config["MaxSizeText"]);
+        Limit1 = Convert.ToInt32(config["Limit1"]);
+        Limit1BigMessageSecond = Convert.ToInt32(config["Limit1BigMessageSecond"]);
+        Limit1SmallMessageSecond = Convert.ToInt32(config["Limit1SmallMessageSecond"]);
+        Limit1SmallSizeOneQuery = Convert.ToInt32(config["Limit1SmallSizeOneQuery"]);
+        LimitOtherBigMessageSecond = Convert.ToInt32(config["LimitOtherBigMessageSecond"]);
+        LimitOtherSmallMessageSecond = Convert.ToInt32(config["LimitOtherSmallMessageSecond"]);
+        LimitOtherSmallSizeOneQuery = Convert.ToInt32(config["LimitOtherSmallSizeOneQuery"]);
+        config = JObject.Parse(File.ReadAllText(fileName))["PeerAdditional"];
+        FilePath = Convert.ToString(config["FilePath"]);
+        TextPath = Convert.ToString(config["TextPath"]);
+        CommitBlockSecond = Convert.ToInt32(config["CommitBlockSecond"]);
+        AvgSizeBlock = Convert.ToInt32(config["AvgSizeBlock"]);
+    }
 }
