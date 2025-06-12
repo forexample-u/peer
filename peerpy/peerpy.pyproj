@@ -21,7 +21,9 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="application\minidb.py" />
     <Compile Include="config.py" />
+    <Compile Include="domain\block.py" />
     <Compile Include="domain\data.py" />
     <Compile Include="domain\message.py" />
     <Compile Include="peerpy.py" />
@@ -32,7 +34,10 @@
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="data\text\" />
     <Folder Include="domain\" />
+    <Folder Include="application\" />
+    <Folder Include="data\" />
     <Folder Include="utils\" />
     <Folder Include="static\" />
     <Folder Include="static\peer\" />
