@@ -39,11 +39,8 @@ public class Minidb
 
         if (fileName != "")
         {
-            string filePath = Path.Combine(_filePath, message.Id.ToString() + Path.GetExtension(fileName));
-            using (FileStream stream = new FileStream(filePath, FileMode.Create))
-            {
-                message.File?.CopyTo(stream);
-            }
+            using var stream = new FileStream(Path.Combine(_filePath, message.Id.ToString() + Path.GetExtension(fileName)), FileMode.Create);
+            message.File?.CopyTo(stream);
         }
 
         long addSecond = querySize > Config.LimitOtherSmallSizeOneQuery ? Config.LimitOtherBigMessageSecond : Config.LimitOtherSmallMessageSecond;
@@ -72,11 +69,9 @@ public class Minidb
         if (_blocks.TryGetValue(id, out Block? block))
         {
             string path = Path.Combine(_textPath, block.Index.ToString());
-            if (File.Exists(path))
-            {
-                List<Data> datas = JsonSerializer.Deserialize<List<Data>>(FileHelper.ReadAllText(path)) ?? new List<Data>();
-                return datas.FirstOrDefault(x => x.Id == id);
-            }
+            if (!File.Exists(path)) return null;
+            List<Data> datas = JsonSerializer.Deserialize<List<Data>>(FileHelper.ReadAllText(path)) ?? new List<Data>();
+            return datas.FirstOrDefault(x => x.Id == id);
         }
         return null;
     }
@@ -102,9 +97,9 @@ public class Minidb
                 {
                     string path = Path.Combine(_textPath, index.ToString());
                     if (!File.Exists(path)) continue;
-                    long sizeReduced = 0;
-                    List<long> deleteIds = new List<long>();
                     List<Data> datas = JsonSerializer.Deserialize<List<Data>>(FileHelper.ReadAllText(path)) ?? new List<Data>();
+                    List<long> deleteIds = new();
+                    long sizeReduced = 0;
                     for (int i = datas.Count - 1; i >= 0; i--)
                     {
                         Data data = datas[i];

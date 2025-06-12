@@ -9,6 +9,7 @@ namespace Peer.Controllers;
 public class PeerController : ControllerBase
 {
     private static Minidb _db = new Minidb(Path.Combine("data", "text"), Path.Combine("wwwroot", "peer"));
+    public static DateTime NextCommitTime = DateTime.UtcNow.AddMinutes(1);
     public static long CountQuery = 0;
 
     [HttpPost("write")]
@@ -19,9 +20,10 @@ public class PeerController : ControllerBase
         {
             _db.Shrink();
         }
-        if (_db.BlockInBytes > Config.AvgSizeBlock)
+        if (_db.BlockInBytes > Config.AvgSizeBlock || DateTime.UtcNow > NextCommitTime)
         {
             _db.Commit();
+            NextCommitTime = DateTime.UtcNow.AddMinutes(1.0);
         }
         return _db.Write(message);
     }
