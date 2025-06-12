@@ -1,5 +1,4 @@
 ﻿using Peer.Domain;
-using Peer.Utils;
 using System.Collections.Concurrent;
 using System.Text.Json;
 
@@ -70,7 +69,7 @@ public class Minidb
         {
             string path = Path.Combine(_textPath, block.Index.ToString());
             if (!File.Exists(path)) return null;
-            List<Data> datas = JsonSerializer.Deserialize<List<Data>>(FileHelper.ReadAllText(path)) ?? new List<Data>();
+            List<Data> datas = JsonSerializer.Deserialize<List<Data>>(ReadAllText(path)) ?? new List<Data>();
             return datas.FirstOrDefault(x => x.Id == id);
         }
         return null;
@@ -97,7 +96,7 @@ public class Minidb
                 {
                     string path = Path.Combine(_textPath, index.ToString());
                     if (!File.Exists(path)) continue;
-                    List<Data> datas = JsonSerializer.Deserialize<List<Data>>(FileHelper.ReadAllText(path)) ?? new List<Data>();
+                    List<Data> datas = JsonSerializer.Deserialize<List<Data>>(ReadAllText(path)) ?? new List<Data>();
                     List<long> deleteIds = new();
                     long sizeReduced = 0;
                     for (int i = datas.Count - 1; i >= 0; i--)
@@ -117,7 +116,7 @@ public class Minidb
                     }
                     if (datas.Count > 0)
                     {
-                        FileHelper.WriteAllText(path, JsonSerializer.Serialize(datas));
+                        WriteAllText(path, JsonSerializer.Serialize(datas));
                     }
                     else
                     {
@@ -145,7 +144,7 @@ public class Minidb
             if (!File.Exists(path))
             {
                 int blockCount = _blockData.Count;
-                FileHelper.WriteAllText(path, JsonSerializer.Serialize(_blockData));
+                WriteAllText(path, JsonSerializer.Serialize(_blockData));
                 _blockData.RemoveRange(0, blockCount);
                 BlockInBytes = 0;
             }
@@ -159,7 +158,7 @@ public class Minidb
         {
             if (long.TryParse(filePath.Split('\\', '/').Last(), out long blockIndex))
             {
-                List<Data> datas = JsonSerializer.Deserialize<List<Data>>(FileHelper.ReadAllText(filePath)) ?? new List<Data>();
+                List<Data> datas = JsonSerializer.Deserialize<List<Data>>(ReadAllText(filePath)) ?? new List<Data>();
                 foreach (Data data in datas)
                 {
                     if (data == null) continue;
@@ -170,5 +169,23 @@ public class Minidb
             }
         }
         BlockIndex += 1;
+    }
+
+    private static void WriteAllText(string path, string? contents)
+    {
+        using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.ReadWrite))
+        using (var writer = new StreamWriter(stream))
+        {
+            writer.Write(contents);
+        }
+    }
+
+    private static string ReadAllText(string path)
+    {
+        using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        using (var reader = new StreamReader(stream))
+        {
+            return reader.ReadToEnd();
+        }
     }
 }
