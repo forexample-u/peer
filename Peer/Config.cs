@@ -13,8 +13,9 @@ public class Config
     public static int LimitOtherBigMessageSecond { get; set; }
     public static int LimitOtherSmallMessageSecond { get; set; }
     public static int LimitOtherSmallSizeOneQuery { get; set; }
-    public static string? FilePath { get; set; }
     public static string? TextPath { get; set; }
+    public static string? FilePath { get; set; }
+    public static string? WebUrlFilePath { get; set; }
     public static int CommitBlockSecond { get; set; }
     public static int AvgSizeBlock { get; set; }
 
@@ -31,8 +32,9 @@ public class Config
         LimitOtherSmallMessageSecond = Convert.ToInt32(config["LimitOtherSmallMessageSecond"]);
         LimitOtherSmallSizeOneQuery = Convert.ToInt32(config["LimitOtherSmallSizeOneQuery"]);
         config = JObject.Parse(File.ReadAllText(fileName))["PeerAdditional"];
-        FilePath = Convert.ToString(config["FilePath"]);
         TextPath = Convert.ToString(config["TextPath"]);
+        FilePath = Convert.ToString(config["FilePath"]);
+        WebUrlFilePath = Convert.ToString(config["WebUrlFilePath"]);
         CommitBlockSecond = Convert.ToInt32(config["CommitBlockSecond"]);
         AvgSizeBlock = Convert.ToInt32(config["AvgSizeBlock"]);
     }

@@ -6,16 +6,14 @@ namespace Peer.Application;
 
 public class Minidb
 {
-    public Minidb(string textPath, string filePath, long blockStartIndex = 0)
+    public Minidb(string textPath, string filePath)
     {
         _textPath = textPath;
         _filePath = filePath;
-        BlockIndex = blockStartIndex;
         Load();
     }
 
-    private readonly string _textPath;
-    private readonly string _filePath;
+    private readonly string _textPath, _filePath;
     private bool _isLockByCommit = false;
     private bool _isLockByShrink = false;
     private List<Data> _blockData = new();
@@ -36,7 +34,7 @@ public class Minidb
             return 0;
         }
 
-        if (fileName != "")
+        if (message.File != null)
         {
             using var stream = new FileStream(Path.Combine(_filePath, message.Id.ToString() + Path.GetExtension(fileName)), FileMode.Create);
             message.File?.CopyTo(stream);

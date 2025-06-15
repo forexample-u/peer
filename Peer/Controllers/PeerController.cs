@@ -8,7 +8,7 @@ namespace Peer.Controllers;
 [Route("peer")]
 public class PeerController : ControllerBase
 {
-    private static Minidb _db = new Minidb(Path.Combine("data", "text"), Path.Combine("wwwroot", "peer"));
+    private static Minidb _db = new Minidb(Config.TextPath, Config.FilePath);
     public static DateTime NextCommitTime = DateTime.UtcNow.AddSeconds(Config.CommitBlockSecond);
     public static long CountQuery = 0;
 
@@ -58,6 +58,6 @@ public class PeerController : ControllerBase
     public string GetFilePath(long id)
     {
         Data data = _db.Get(id);
-        return (data?.Filename?.Length ?? 0) == 0 ? "" : "peer/" + id.ToString() + Path.GetExtension(data.Filename);
+        return (data?.Filename?.Length ?? 0) == 0 ? "" : Config.WebUrlFilePath + "/" + id.ToString() + Path.GetExtension(data.Filename);
     }
 }
