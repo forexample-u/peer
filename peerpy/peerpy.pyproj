@@ -27,7 +27,6 @@
     <Compile Include="domain\data.py" />
     <Compile Include="domain\message.py" />
     <Compile Include="peerpy.py" />
-    <Compile Include="utils\hash_helper.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="config.json" />
@@ -38,7 +37,6 @@
     <Folder Include="domain\" />
     <Folder Include="application\" />
     <Folder Include="data\" />
-    <Folder Include="utils\" />
     <Folder Include="static\" />
     <Folder Include="static\peer\" />
   </ItemGroup>
