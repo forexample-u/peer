@@ -73,7 +73,7 @@ class Minidb:
                     datas = [Data(**item) for item in json.load(f)]
                 for data in datas:
                     if not data == None:
-                        self._blocks[data.Id] = Block(self.block_index, data.delete_unix_at)
+                        self._blocks[data.id] = Block(block_index, data.delete_unix_at)
                         self.size_all_block_in_bytes += len(data.text) + data.file_size_of_bytes
                 self.block_index = block_index if block_index > self.block_index else self.block_index
         self.block_index += 1
@@ -107,15 +107,16 @@ class Minidb:
 
             for index in indexes:
                 try:
-                    path = os.path.join(self._textPath, str(index))
+                    path = os.path.join(self._text_path, str(index))
                     if not os.path.exists(path): continue
                     datas = []
                     with open(path, 'r', encoding='utf-8') as f:
                         datas = [Data(**item) for item in json.load(f)]
                     delete_ids = []
                     size_reduced = 0
-                    for i in range(datas.count):
-                        data = datas[i]
+                    length_datas = len(datas)
+                    for i in range(length_datas):
+                        data = datas[length_datas - i - 1]
                         if data.delete_unix_at < now_unix:
                             _, extension = os.path.splitext(data.filename)
                             fullpath = os.path.join(self._file_path, str(data.id) + extension)
@@ -124,10 +125,10 @@ class Minidb:
                             size_reduced += len(data.text) + data.file_size_of_bytes
                             delete_ids.append(data.id)
                             datas.remove(data)
-
-                    if datas.count > 0:
+                    if len(datas) > 0:
+                        json_string = json.dumps([data.to_dict() for data in datas], ensure_ascii=True)
                         with open(path, 'w', encoding='utf-8') as f:
-                            json.dump(datas, f, ensure_ascii=False, indent=0)
+                            f.write(json_string)
                     else:
                         os.remove(path)
                     for id in delete_ids:

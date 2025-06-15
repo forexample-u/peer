@@ -8,8 +8,8 @@ from config import Config
 from application.minidb import Minidb
 
 app = Flask(__name__)
-db = Minidb(os.path.join(Config.text_path), os.path.join(Config.file_path))
-next_commit_time = datetime.utcnow() + timedelta(seconds=Config.commit_block_second)
+db = None
+next_commit_time = 0
 count_query = 0
 
 def write(message_id, message_text, file: FileStorage):
@@ -56,8 +56,10 @@ def get_file_path(id):
     return f"{Config.web_url_file_path}/{id}{os.path.splitext(data.filename)[1]}" if data and data.file_size_of_bytes > 0 else ""
 
 if __name__ == '__main__':
+    Config.load()
     dir_path = os.path.join(Config.file_path)
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
-    Config.load()
+    db = Minidb(os.path.join(Config.text_path), os.path.join(Config.file_path))
+    next_commit_time = datetime.utcnow() + timedelta(seconds=Config.commit_block_second)
     app.run()
