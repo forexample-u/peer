@@ -2,10 +2,10 @@
 
 public class Block
 {
-    public Block(long index, long deleteUnix)
+    public Block(long index, long deleteUnixAt)
     {
         Index = index;
-        DeleteUnixAt = deleteUnix;
+        DeleteUnixAt = deleteUnixAt;
     }
 
     public long Index { get; set; }
