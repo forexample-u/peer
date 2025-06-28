@@ -2,22 +2,24 @@
 
 public class Data
 {
-    public Data(long id, string text, ulong filehash, string filename, long deleteUnixAt, string contentType, long fileSizeOfBytes)
+    public Data(string uniqueKey, string text, int filehash, string filename, int deleteUnixAt, string contentType, int fileSizeOfBytes, byte[] bytes)
     {
-        Id = id;
+        UniqueKey = uniqueKey;
         Text = text;
         Filehash = filehash;
         Filename = filename;
         DeleteUnixAt = deleteUnixAt;
         ContentType = contentType;
         FileSizeOfBytes = fileSizeOfBytes;
+        Bytes = bytes;
     }
 
-    public long Id { get; set; }
+    public string UniqueKey { get; set; }
     public string Text { get; set; }
-    public ulong Filehash { get; set; }
+    public int Filehash { get; set; }
     public string Filename { get; set; }
     public long DeleteUnixAt { get; set; }
-    public long FileSizeOfBytes { get; set; }
+    public int FileSizeOfBytes { get; set; }
     public string ContentType { get; set; }
+    public byte[] Bytes { get; set; }
 }

@@ -18,6 +18,7 @@ public class Config
     public static string? WebUrlFilePath { get; set; }
     public static int CommitBlockSecond { get; set; }
     public static int AvgSizeBlock { get; set; }
+    public static string? ConnectionString { get; set; }
 
     public static void Load(string fileName = "appsettings.json")
     {
@@ -37,5 +38,6 @@ public class Config
         WebUrlFilePath = Convert.ToString(config["WebUrlFilePath"]);
         CommitBlockSecond = Convert.ToInt32(config["CommitBlockSecond"]);
         AvgSizeBlock = Convert.ToInt32(config["AvgSizeBlock"]);
+        ConnectionString = Convert.ToString(config["ConnectionString"]);
     }
 }

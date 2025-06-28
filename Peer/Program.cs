@@ -1,6 +1,5 @@
 Peer.Config.Load();
-Directory.CreateDirectory(Path.Combine("wwwroot", "peer"));
-Directory.CreateDirectory(Path.Combine("data", "text"));
+Peer.Application.Minidb.Init();
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
