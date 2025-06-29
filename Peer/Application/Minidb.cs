@@ -10,8 +10,8 @@ public class Minidb
         string contentType = message.File?.ContentType ?? "";
         string fileName = message.File?.FileName ?? "";
         int fileSize = (int)(message.File?.Length ?? 0);
-        long textSize = message.Text?.Length ?? 0;
-        long querySize = textSize + fileSize;
+        int textSize = message.Text?.Length ?? 0;
+        int querySize = textSize + fileSize;
         if (textSize > Config.MaxSizeText || querySize > Config.MaxSizeOneQuery || message.Id.Length > 255)
         {
             return 0;
@@ -22,12 +22,12 @@ public class Minidb
             return 0;
         }
 
-        long addSecond = querySize > Config.LimitOtherSmallSizeOneQuery ? Config.LimitOtherBigMessageSecond : Config.LimitOtherSmallMessageSecond;
+        int addSecond = querySize > Config.LimitOtherSmallSizeOneQuery ? Config.LimitOtherBigMessageSecond : Config.LimitOtherSmallMessageSecond;
         if (sizeAllBlockInBytes <= Config.Limit1)
         {
             addSecond = querySize > Config.Limit1SmallSizeOneQuery ? Config.Limit1BigMessageSecond : Config.Limit1SmallMessageSecond;
         }
-        long deleteUnixAt = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() + addSecond;
+        long deleteUnixAt = new DateTimeOffset(DateTime.UtcNow.AddSeconds(addSecond)).ToUnixTimeSeconds();
         byte[] bytes = [];
         if (message.File != null)
         {
@@ -37,7 +37,7 @@ public class Minidb
                 bytes = memoryStream.ToArray();
             }
         }
-        Data data = new Data(message.Id, message.Text, 0, fileName, (int)deleteUnixAt, contentType, fileSize, bytes);
+        Data data = new Data(message.Id, message.Text, 0, fileName, deleteUnixAt, contentType, fileSize, bytes);
         string sql = $"UPDATE datainfo set count_query = count_query + 1; UPDATE datainfo set query_size_of_bytes = query_size_of_bytes + {querySize};" +
             "INSERT INTO data (unique_key, text, filename, delete_unix_at, content_type, file_size_of_bytes, bytes) " +
             "VALUES (@unique_key, @text, @filename, @delete_unix_at, @content_type, @file_size_of_bytes, @bytes);";
@@ -73,7 +73,7 @@ public class Minidb
                 {
                     string text = reader.GetString(0);
                     string filename = reader.GetString(1);
-                    int deleteUnixAt = reader.GetInt32(2);
+                    long deleteUnixAt = reader.GetInt64(2);
                     string contentType = reader.GetString(3);
                     int fileSizeOfBytes = reader.GetInt32(4);
                     byte[] bytes = reader.IsDBNull(5) ? [] : (byte[])reader[5];
@@ -120,9 +120,26 @@ public class Minidb
 
     public static void Init()
     {
-        string sql = "CREATE TABLE IF NOT EXISTS data (id SERIAL PRIMARY KEY, unique_key VARCHAR(255) UNIQUE, text TEXT, filename TEXT, delete_unix_at BIGINT, content_type TEXT, file_size_of_bytes INTEGER, bytes BYTEA);" +
-            "CREATE TABLE IF NOT EXISTS datainfo (id INTEGER PRIMARY KEY, count_query BIGINT, query_size_of_bytes BIGINT);" +
-            "INSERT INTO datainfo (id, count_query, query_size_of_bytes) SELECT 1, 0, 0 WHERE NOT EXISTS (SELECT 1 FROM datainfo WHERE id = 1);";
+        string sql = @"
+            CREATE TABLE IF NOT EXISTS data (
+                id SERIAL PRIMARY KEY,
+                unique_key VARCHAR(128) UNIQUE,
+                text TEXT,
+                filename TEXT,
+                delete_unix_at BIGINT,
+                content_type TEXT,
+                file_size_of_bytes INTEGER,
+                bytes BYTEA
+            );
+            CREATE TABLE IF NOT EXISTS datainfo (
+                id INTEGER PRIMARY KEY,
+                count_query BIGINT,
+                query_size_of_bytes BIGINT
+            );
+            INSERT INTO datainfo (id, count_query, query_size_of_bytes)
+            SELECT 1, 0, 0
+            WHERE NOT EXISTS (SELECT 1 FROM datainfo WHERE id = 1);
+        ";
         using NpgsqlConnection connection = new(Config.ConnectionString);
         connection.Open();
         using (NpgsqlCommand command = new(sql, connection))

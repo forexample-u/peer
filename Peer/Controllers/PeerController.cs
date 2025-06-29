@@ -24,7 +24,7 @@ public class PeerController : ControllerBase
     [HttpGet("write/{id}/{text}")]
     public long Write(string id, string text)
     {
-        return Write(new Message() { Text = text, Id = id });
+        return Write(new Message(id, text, null));
     }
 
     [HttpGet("text/{id}")]

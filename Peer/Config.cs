@@ -22,22 +22,24 @@ public class Config
 
     public static void Load(string fileName = "appsettings.json")
     {
-        var config = JObject.Parse(File.ReadAllText(fileName))["PeerMain"];
-        MaxSizeOneQuery = Convert.ToInt32(config["MaxSizeOneQuery"]);
-        MaxSizeText = Convert.ToInt32(config["MaxSizeText"]);
-        Limit1 = Convert.ToInt32(config["Limit1"]);
-        Limit1BigMessageSecond = Convert.ToInt32(config["Limit1BigMessageSecond"]);
-        Limit1SmallMessageSecond = Convert.ToInt32(config["Limit1SmallMessageSecond"]);
-        Limit1SmallSizeOneQuery = Convert.ToInt32(config["Limit1SmallSizeOneQuery"]);
-        LimitOtherBigMessageSecond = Convert.ToInt32(config["LimitOtherBigMessageSecond"]);
-        LimitOtherSmallMessageSecond = Convert.ToInt32(config["LimitOtherSmallMessageSecond"]);
-        LimitOtherSmallSizeOneQuery = Convert.ToInt32(config["LimitOtherSmallSizeOneQuery"]);
-        config = JObject.Parse(File.ReadAllText(fileName))["PeerAdditional"];
-        TextPath = Convert.ToString(config["TextPath"]);
-        FilePath = Convert.ToString(config["FilePath"]);
-        WebUrlFilePath = Convert.ToString(config["WebUrlFilePath"]);
-        CommitBlockSecond = Convert.ToInt32(config["CommitBlockSecond"]);
-        AvgSizeBlock = Convert.ToInt32(config["AvgSizeBlock"]);
-        ConnectionString = Convert.ToString(config["ConnectionString"]);
+        string json = File.ReadAllText(fileName);
+        JObject data = JObject.Parse(json);
+        JToken peerMain = data["PeerMain"];
+        JToken peerAdditional = data["PeerAdditional"];
+        MaxSizeOneQuery = Convert.ToInt32(peerMain["MaxSizeOneQuery"]);
+        MaxSizeText = Convert.ToInt32(peerMain["MaxSizeText"]);
+        Limit1 = Convert.ToInt32(peerMain["Limit1"]);
+        Limit1BigMessageSecond = Convert.ToInt32(peerMain["Limit1BigMessageSecond"]);
+        Limit1SmallMessageSecond = Convert.ToInt32(peerMain["Limit1SmallMessageSecond"]);
+        Limit1SmallSizeOneQuery = Convert.ToInt32(peerMain["Limit1SmallSizeOneQuery"]);
+        LimitOtherBigMessageSecond = Convert.ToInt32(peerMain["LimitOtherBigMessageSecond"]);
+        LimitOtherSmallMessageSecond = Convert.ToInt32(peerMain["LimitOtherSmallMessageSecond"]);
+        LimitOtherSmallSizeOneQuery = Convert.ToInt32(peerMain["LimitOtherSmallSizeOneQuery"]);
+        TextPath = Convert.ToString(peerAdditional["TextPath"]);
+        FilePath = Convert.ToString(peerAdditional["FilePath"]);
+        WebUrlFilePath = Convert.ToString(peerAdditional["WebUrlFilePath"]);
+        CommitBlockSecond = Convert.ToInt32(peerAdditional["CommitBlockSecond"]);
+        AvgSizeBlock = Convert.ToInt32(peerAdditional["AvgSizeBlock"]);
+        ConnectionString = Convert.ToString(peerAdditional["ConnectionString"]);
     }
 }

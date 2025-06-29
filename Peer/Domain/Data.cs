@@ -2,7 +2,7 @@
 
 public class Data
 {
-    public Data(string uniqueKey, string text, int filehash, string filename, int deleteUnixAt, string contentType, int fileSizeOfBytes, byte[] bytes)
+    public Data(string uniqueKey, string text, int filehash, string filename, long deleteUnixAt, string contentType, int fileSizeOfBytes, byte[] bytes)
     {
         UniqueKey = uniqueKey;
         Text = text;
@@ -19,7 +19,7 @@ public class Data
     public int Filehash { get; set; }
     public string Filename { get; set; }
     public long DeleteUnixAt { get; set; }
-    public int FileSizeOfBytes { get; set; }
     public string ContentType { get; set; }
+    public int FileSizeOfBytes { get; set; }
     public byte[] Bytes { get; set; }
 }
