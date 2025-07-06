@@ -5,21 +5,21 @@ namespace Peer.Application;
 
 public class Minidb
 {
-    public long Write(Message message, long sizeAllBlockInBytes = 0)
+    public string Write(Message message, long sizeAllBlockInBytes = 0)
     {
         string contentType = message.File?.ContentType ?? "";
         string fileName = message.File?.FileName ?? "";
         int fileSize = (int)(message.File?.Length ?? 0);
         int textSize = message.Text?.Length ?? 0;
         int querySize = textSize + fileSize;
-        if (textSize > Config.MaxSizeText || querySize > Config.MaxSizeOneQuery || message.Id.Length > 255)
+        if (textSize > Config.MaxSizeText || querySize > Config.MaxSizeOneQuery || message.Id.Length > 256)
         {
-            return 0;
+            return "0";
         }
-        Data finddata = Get(message.Id);
-        if (finddata != null)
+        string finddata = GetText(message.Id);
+        if (finddata == null)
         {
-            return 0;
+            return "0";
         }
 
         int addSecond = querySize > Config.LimitOtherSmallSizeOneQuery ? Config.LimitOtherBigMessageSecond : Config.LimitOtherSmallMessageSecond;
@@ -27,7 +27,6 @@ public class Minidb
         {
             addSecond = querySize > Config.Limit1SmallSizeOneQuery ? Config.Limit1BigMessageSecond : Config.Limit1SmallMessageSecond;
         }
-        long deleteUnixAt = new DateTimeOffset(DateTime.UtcNow.AddSeconds(addSecond)).ToUnixTimeSeconds();
         byte[] bytes = [];
         if (message.File != null)
         {
@@ -37,10 +36,10 @@ public class Minidb
                 bytes = memoryStream.ToArray();
             }
         }
-        Data data = new Data(message.Id, message.Text, 0, fileName, deleteUnixAt, contentType, fileSize, bytes);
+        string deleteUnixAt = new DateTimeOffset(DateTime.UtcNow.AddSeconds(addSecond)).ToUnixTimeSeconds().ToString();
         string sql = $"UPDATE datainfo set count_query = count_query + 1; UPDATE datainfo set query_size_of_bytes = query_size_of_bytes + {querySize};" +
             "INSERT INTO data (unique_key, text, filename, delete_unix_at, content_type, file_size_of_bytes, bytes) " +
-            "VALUES (@unique_key, @text, @filename, @delete_unix_at, @content_type, @file_size_of_bytes, @bytes);";
+            $"VALUES (@unique_key, @text, @filename, {deleteUnixAt}, @content_type, @file_size_of_bytes, @bytes);";
         using NpgsqlConnection connection = new(Config.ConnectionString);
         connection.Open();
         using (NpgsqlCommand command = new(sql, connection))
@@ -48,7 +47,6 @@ public class Minidb
             command.Parameters.AddWithValue("@unique_key", message.Id);
             command.Parameters.AddWithValue("@text", message.Text);
             command.Parameters.AddWithValue("@filename", fileName);
-            command.Parameters.AddWithValue("@delete_unix_at", deleteUnixAt);
             command.Parameters.AddWithValue("@content_type", contentType);
             command.Parameters.AddWithValue("@file_size_of_bytes", fileSize);
             command.Parameters.AddWithValue("@bytes", bytes);
@@ -57,10 +55,10 @@ public class Minidb
         return deleteUnixAt;
     }
 
-    public Data Get(string id)
+    public Data GetFile(string id)
     {
         Data data = null;
-        string sql = "SELECT text, filename, delete_unix_at, content_type, file_size_of_bytes, bytes FROM data WHERE unique_key = @id;";
+        string sql = "SELECT filename, content_type, file_size_of_bytes, bytes FROM data WHERE unique_key = @id;";
         using NpgsqlConnection connection = new(Config.ConnectionString);
         connection.Open();
         using (NpgsqlCommand command = new(sql, connection))
@@ -71,17 +69,36 @@ public class Minidb
                 reader.Read();
                 if (reader.HasRows)
                 {
-                    string text = reader.GetString(0);
-                    string filename = reader.GetString(1);
-                    long deleteUnixAt = reader.GetInt64(2);
-                    string contentType = reader.GetString(3);
-                    int fileSizeOfBytes = reader.GetInt32(4);
-                    byte[] bytes = reader.IsDBNull(5) ? [] : (byte[])reader[5];
-                    data = new Data(id, text, 0, filename, deleteUnixAt, contentType, fileSizeOfBytes, bytes);
+                    string filename = reader.GetString(0);
+                    string contentType = reader.GetString(1);
+                    int fileSizeOfBytes = reader.GetInt32(2);
+                    byte[] bytes = reader.IsDBNull(3) ? [] : (byte[])reader[3];
+                    data = new Data(id, "", 0, filename, 0, contentType, fileSizeOfBytes, bytes);
                 }
             }
         }
         return data;
+    }
+
+    public string GetText(string id)
+    {
+        string text = null;
+        string sql = "SELECT text FROM data WHERE unique_key = @id;";
+        using NpgsqlConnection connection = new(Config.ConnectionString);
+        connection.Open();
+        using (NpgsqlCommand command = new(sql, connection))
+        {
+            command.Parameters.AddWithValue("@id", id);
+            using (var reader = command.ExecuteReader())
+            {
+                reader.Read();
+                if (reader.HasRows)
+                {
+                    string filename = reader.GetString(0);
+                }
+            }
+        }
+        return text;
     }
 
     public DataInformation GetInfo()
@@ -108,7 +125,7 @@ public class Minidb
 
     public void Shrink()
     {
-        long nowUnix = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds();
+        string nowUnix = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds().ToString();
         string sql = $"DELETE FROM data WHERE delete_unix_at < {nowUnix};";
         using NpgsqlConnection connection = new(Config.ConnectionString);
         connection.Open();
@@ -123,7 +140,7 @@ public class Minidb
         string sql = @"
             CREATE TABLE IF NOT EXISTS data (
                 id SERIAL PRIMARY KEY,
-                unique_key VARCHAR(128) UNIQUE,
+                unique_key VARCHAR(227) UNIQUE,
                 text TEXT,
                 filename TEXT,
                 delete_unix_at BIGINT,

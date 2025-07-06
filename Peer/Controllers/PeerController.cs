@@ -11,7 +11,7 @@ public class PeerController : ControllerBase
     private static Minidb _db = new Minidb();
 
     [HttpPost("write")]
-    public long Write(Message message)
+    public string Write(Message message)
     {
         DataInformation dataInfo = _db.GetInfo();
         if (dataInfo.CountQuery % 20 == 0)
@@ -22,7 +22,7 @@ public class PeerController : ControllerBase
     }
 
     [HttpGet("write/{id}/{text}")]
-    public long Write(string id, string text)
+    public string Write(string id, string text)
     {
         return Write(new Message(id, text, null));
     }
@@ -30,13 +30,13 @@ public class PeerController : ControllerBase
     [HttpGet("text/{id}")]
     public string Text(string id)
     {
-        return _db.Get(id)?.Text ?? "";
+        return _db.GetText(id) ?? "";
     }
 
     [HttpGet("file/{id}")]
     public IActionResult File(string id)
     {
-        Data data = _db.Get(id);
+        Data data = _db.GetFile(id);
         if (data != null)
         {
             Response.Headers.Add("Content-Disposition", $"inline; filename*=UTF-8''{Uri.EscapeDataString(data.Filename)}");
@@ -48,7 +48,7 @@ public class PeerController : ControllerBase
     [HttpGet("download/{id}")]
     public IActionResult Download(string id)
     {
-        Data data = _db.Get(id);
+        Data data = _db.GetFile(id);
         if (data != null)
         {
             return File(data.Bytes, data.ContentType, data.Filename);
