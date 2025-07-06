@@ -66,7 +66,7 @@ class Minidb {
             $stmt->execute();
             $result = $stmt->get_result();
             if ($row = $result->fetch_assoc()) {
-                $deleteUnixAt = $row['text'];
+                $text = $row['text'];
             }
             $stmt->close();
         }
@@ -87,9 +87,8 @@ class Minidb {
                 $filelength =  (int)$row['filelength'];
                 $deleteUnixAt = $row['delete_unix_at'];
                 $contentType = $row['content_type'];
-                $querySizeMB = $row['query_size_mb'];
                 $bytes = is_null($row['bytes']) ? null : $row['bytes'];
-                $data = new Data($id, "", 0, $filename, $filelength, $deleteUnixAt, $contentType, $querySizeMB, $bytes);
+                $data = new Data($id, "", 0, $filename, $filelength, $deleteUnixAt, $contentType, 0.0, $bytes);
             }
             $stmt->close();
         }
