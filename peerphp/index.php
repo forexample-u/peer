@@ -19,9 +19,10 @@ header('Content-Type: application/json; charset=utf-8');
 switch ($segments[0]) {
     case 'write':
         if ($method === 'POST') {
-            $datainformation = $db->get_info();
+            $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase);
+            $datainformation = $db->get_info($mysqli);
             if ($datainformation->countQuery % 20 == 0) {
-                $db->shrink();
+                $db->shrink($mysqli);
             }
             $text = $_POST['text'] ?? "";
             $file = new File("", "", "", 0);
@@ -30,16 +31,18 @@ switch ($segments[0]) {
                 $file = new File($_FILES['file']['name'], $_FILES['file']['type'], $stream, $_FILES['file']['size']);
             }
             $message = new Message($segments[1], $text, $file);
-            $deleteUnixAt = $db->write($message, $datainformation->querySizeMB);
+            $deleteUnixAt = $db->write($mysqli, $message, $datainformation->querySizeMB);
+            $mysqli->close();
             echo $deleteUnixAt;
         } elseif ($method === 'GET') {
-            $datainformation = $db->get_info();
+            $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase);
+            $datainformation = $db->get_info($mysqli);
             if ($datainformation->countQuery % 20 == 0) {
-                $db->shrink();
+                $db->shrink($mysqli);
             }
-            $datainformation = $db->get_info();
             $message = new Message($segments[1], $segments[2], new File("", "", "", 0));
-            $deleteUnixAt = $db->write($message, $datainformation->querySizeMB);
+            $deleteUnixAt = $db->write($mysqli, $message, $datainformation->querySizeMB);
+            $mysqli->close();
             echo $deleteUnixAt;
         } else {
             http_response_code(405);
@@ -47,16 +50,21 @@ switch ($segments[0]) {
         break;
 
     case 'text':
-        $text = $db->get_text($segments[1]);
+        $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase);
+        $text = $db->get_text($mysqli, $segments[1]);
+        $mysqli->close();
         echo $text;
         break;
 
     case 'file':
-        $data = $db->get_file($segments[1]);
+        $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase);
+        $data = $db->get_file($mysqli, $segments[1]);
+        $mysqli->close();
         if ($data->filename !== "" && $data->filelength !== 0) {
             header('Content-Type: ' . $data->contentType);
             header("Content-Disposition: inline; filename*=UTF-8''" . rawurlencode($data->filename));
             header('Content-Length: ' . $data->filelength);
+            header('Cache-Control: public, max-age=86400');
             echo $data->bytes;
         } else {
             http_response_code(404);
@@ -64,15 +72,25 @@ switch ($segments[0]) {
         exit;
 
     case 'download':
-        $data = $db->get_file($segments[1]);
+        $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase);
+        $data = $db->get_file($mysqli, $segments[1]);
+        $mysqli->close();
         if ($data->filename !== "" && $data->filelength !== 0) {
             header('Content-Type: ' . $data->contentType);
             header("Content-Disposition: attachment; filename*=UTF-8''" . rawurlencode($data->filename));
             header('Content-Length: ' . $data->filelength);
+            header('Cache-Control: public, max-age=86400');
             echo $data->bytes;
         } else {
             http_response_code(404);
         }
+        break;
+
+    case $config::$SecretUrlInitDatabase:
+        $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase);
+        $db->init($mysqli);
+        $mysqli->close();
+        echo "peer";
         break;
 
     default:

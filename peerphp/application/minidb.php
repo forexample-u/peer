@@ -5,7 +5,7 @@ require_once __DIR__ . '/../domain/message.php';
 require_once __DIR__ . '/../config.php';
 
 class Minidb {
-    public function write(Message $message, float $sizeAllQueryMB): string {
+    public function write(mysqli $mysqli, Message $message, float $sizeAllQueryMB): string {
         $config = new Config();
         $contentType = $message->file->contentType ?? "";
         $filename = $message->file->fileName ?? "";
@@ -17,7 +17,7 @@ class Minidb {
         {
             return "0";
         }
-        $finddelete_unix = $this->get_delete_unix($message->id);
+        $finddelete_unix = $this->get_delete_unix($mysqli, $message->id);
         if ($finddelete_unix !== "0")
         {
             return "0";
@@ -30,54 +30,59 @@ class Minidb {
         $date = new DateTime('now', new DateTimeZone('UTC'));
         $date->modify("+" . (string)$addSecond . ' seconds');
         $deleteUnixAt = $date->format('U');
-        $mysqli = new mysqli('127.0.0.1', 'mysql', 'mysql', 'peer', 3306);
         $stmt = $mysqli->prepare("INSERT INTO data (unique_key, text, filename, filelength, content_type, query_size_mb, bytes, delete_unix_at) VALUES (?, ?, ?, ?, ?, ?, ?, $deleteUnixAt);");
         $stmt->bind_param("sssisdb", $message->id, $message->text, $filename, $filelength, $contentType, $querySizeMB, $null);
         $stmt->send_long_data(6, $message->file->stream);
         $stmt->execute();
         $mysqli->query("UPDATE datainfo SET count_query = count_query + 1, query_size_mb = query_size_mb + " . (string)$querySizeMB . ";");
-        $mysqli->close();
         return $deleteUnixAt;
     }
 
-    function get_delete_unix(string $id) : string {
+    function get_info(mysqli $mysqli) : DataInformation {
+        $datainfo = new DataInformation(0, 0.0);
+        $sql = "SELECT count_query, query_size_mb FROM datainfo WHERE id = 1";
+        if ($result = $mysqli->query($sql)) {
+            if ($row = $result->fetch_assoc()) {
+                $countQuery = $row['count_query'];
+                $querySizeMB = $row['query_size_mb'];
+                $datainfo = new DataInformation($countQuery, $querySizeMB);
+            }
+            $result->free();
+        }
+        return $datainfo;
+    }
+
+    function get_delete_unix(mysqli $mysqli, string $id): string {
         $deleteUnixAt = "0";
-        $mysqli = new mysqli('127.0.0.1', 'mysql', 'mysql', 'peer', 3306);
-        $sql = "SELECT delete_unix_at FROM data WHERE unique_key = ?";
+        $sql = "SELECT delete_unix_at FROM data WHERE unique_key = ? LIMIT 1";
         if ($stmt = $mysqli->prepare($sql)) {
             $stmt->bind_param("s", $id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            if ($row = $result->fetch_assoc()) {
-                $deleteUnixAt = $row['delete_unix_at'];
+            if ($stmt->execute()) {
+                $stmt->bind_result($deleteUnixAt);
+                $stmt->fetch();
             }
             $stmt->close();
         }
-        $mysqli->close();
         return $deleteUnixAt;
     }
 
-    function get_text(string $id) : string {
+    function get_text(mysqli $mysqli, string $id): string {
         $text = "";
-        $mysqli = new mysqli('127.0.0.1', 'mysql', 'mysql', 'peer', 3306);
-        $sql = "SELECT text FROM data WHERE unique_key = ?";
+        $sql = "SELECT text FROM data WHERE unique_key = ? LIMIT 1";
         if ($stmt = $mysqli->prepare($sql)) {
             $stmt->bind_param("s", $id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            if ($row = $result->fetch_assoc()) {
-                $text = $row['text'];
+            if ($stmt->execute()) {
+                $stmt->bind_result($text);
+                $stmt->fetch();
             }
             $stmt->close();
         }
-        $mysqli->close();
         return $text;
     }
 
-    function get_file(string $id) : Data {
+    function get_file(mysqli $mysqli, string $id) : Data {
         $data = new Data("", "", 0, "", 0, 0, "", 0, null);
-        $mysqli = new mysqli('127.0.0.1', 'mysql', 'mysql', 'peer', 3306);
-        $sql = "SELECT filename, filelength, delete_unix_at, content_type, query_size_mb, bytes FROM data WHERE unique_key = ?";
+        $sql = "SELECT filename, filelength, delete_unix_at, content_type, query_size_mb, bytes FROM data WHERE unique_key = ? LIMIT 1";
         if ($stmt = $mysqli->prepare($sql)) {
             $stmt->bind_param("s", $id);
             $stmt->execute();
@@ -88,41 +93,21 @@ class Minidb {
                 $deleteUnixAt = $row['delete_unix_at'];
                 $contentType = $row['content_type'];
                 $bytes = is_null($row['bytes']) ? null : $row['bytes'];
-                $data = new Data($id, "", 0, $filename, $filelength, $deleteUnixAt, $contentType, 0.0, $bytes);
+                $data = new Data($id, "", 0, $filename, $filelength, $deleteUnixAt, $contentType, 0, $bytes);
             }
             $stmt->close();
         }
-        $mysqli->close();
         return $data;
     }
 
-    function get_info() : DataInformation {
-        $datainfo = new DataInformation(0, 0.0);
-        $mysqli = new mysqli('127.0.0.1', 'mysql', 'mysql', 'peer', 3306);
-        $sql = "SELECT count_query, query_size_mb FROM datainfo WHERE id = 1";
-        if ($result = $mysqli->query($sql)) {
-            if ($row = $result->fetch_assoc()) {
-                $countQuery = $row['count_query'];
-                $querySizeMB = $row['query_size_mb'];
-                $datainfo = new DataInformation($countQuery, $querySizeMB);
-            }
-            $result->free();
-        }
-        $mysqli->close();
-        return $datainfo;
-    }
-
-    function shrink() : void {
+    function shrink(mysqli $mysqli) : void {
         $now = new DateTime('now', new DateTimeZone('UTC'));
         $nowUnix = $now->format('U');
-        $mysqli = new mysqli('127.0.0.1', 'mysql', 'mysql', 'peer', 3306);
         $mysqli->query("UPDATE datainfo SET query_size_mb = query_size_mb - (SELECT SUM(query_size_mb) FROM data WHERE delete_unix_at < " . $nowUnix . ");");
         $mysqli->query("DELETE FROM data WHERE delete_unix_at < " . $nowUnix);
-        $mysqli->close();
     }
 
-    function init() : void {
-        $mysqli = new mysqli('127.0.0.1', 'mysql', 'mysql', 'peer', 3306);
+    function init(mysqli $mysqli) : void {
         $sql = "
             CREATE TABLE IF NOT EXISTS data (
                 id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -152,7 +137,6 @@ class Minidb {
                 }
             } while ($mysqli->more_results() && $mysqli->next_result());
         }
-        $mysqli->close();
     }
 }
 ?>

@@ -15,6 +15,12 @@ class Config {
     public static int $CommitBlockSecond;
     public static int $AvgSizeBlock;
     public static ?string $ConnectionString = null;
+    public static ?string $MysqlHost = null;
+    public static int $MysqlPort;
+    public static ?string $MysqlUser = null;
+    public static ?string $MysqlPassword = null;
+    public static ?string $MysqlDatabase = null;
+    public static ?string $SecretUrlInitDatabase = null;
 
     public static function load(string $fileName = "appsettings.json"): void {
         $json = file_get_contents($fileName);
@@ -30,12 +36,20 @@ class Config {
         self::$LimitOtherBigMessageSecond = (int)($peerMain['LimitOtherBigMessageSecond'] ?? 0);
         self::$LimitOtherSmallMessageSecond = (int)($peerMain['LimitOtherSmallMessageSecond'] ?? 0);
         self::$LimitOtherSmallSizeOneQueryMB = (float)($peerMain['LimitOtherSmallSizeOneQueryMB'] ?? 0);
+
         self::$TextPath = isset($peerAdditional['TextPath']) ? (string)$peerAdditional['TextPath'] : null;
         self::$FilePath = isset($peerAdditional['FilePath']) ? (string)$peerAdditional['FilePath'] : null;
         self::$WebUrlFilePath = isset($peerAdditional['WebUrlFilePath']) ? (string)$peerAdditional['WebUrlFilePath'] : null;
         self::$CommitBlockSecond = (int)($peerAdditional['CommitBlockSecond'] ?? 0);
         self::$AvgSizeBlock = (int)($peerAdditional['AvgSizeBlock'] ?? 0);
         self::$ConnectionString = isset($peerAdditional['ConnectionString']) ? (string)$peerAdditional['ConnectionString'] : null;
+
+        self::$MysqlHost = isset($peerAdditional['MysqlHost']) ? (string)$peerAdditional['MysqlHost'] : null;
+        self::$MysqlPort = isset($peerAdditional['MysqlPort']) ? (int)$peerAdditional['MysqlPort'] : null;
+        self::$MysqlUser = isset($peerAdditional['MysqlUser']) ? (string)$peerAdditional['MysqlUser'] : null;
+        self::$MysqlPassword = isset($peerAdditional['MysqlPassword']) ? (string)$peerAdditional['MysqlPassword'] : null;
+        self::$MysqlDatabase = isset($peerAdditional['MysqlDatabase']) ? (string)$peerAdditional['MysqlDatabase'] : null;
+        self::$SecretUrlInitDatabase = isset($peerAdditional['SecretUrlInitDatabase']) ? (string)$peerAdditional['SecretUrlInitDatabase'] : null;
     }
 }
 ?>
