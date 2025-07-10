@@ -19,20 +19,20 @@
     height: calc(100vh - 50px);
     border-top: 1px solid #333;
   }
-  #userList {
+  #talkList {
     width: 220px;
     background: #1e1e1e;
     border-right: 1px solid #333;
     overflow-y: auto;
   }
-  #userList h2 {
+  #talkList h2 {
     margin: 0;
     padding: 15px;
     font-size: 1.1rem;
     border-bottom: 1px solid #333;
     user-select: none;
   }
-  .userItem {
+  .talkItem {
     display: flex;
     align-items: center;
     padding: 10px 12px;
@@ -40,7 +40,7 @@
     border-bottom: 1px solid #2c2c2c;
     transition: background 0.2s;
   }
-  .userItem:hover, .userItem.active {
+  .talkItem:hover, .talkItem.active {
     background: #3a86ff;
   }
   .avatar {
@@ -57,7 +57,7 @@
     margin-right: 12px;
     user-select: none;
   }
-  .userName {
+  .talkName {
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -140,7 +140,7 @@
   #messageForm button:hover {
     background: #265ecf;
   }
-  #nicknameModal {
+  #usernameModal {
     position: fixed;
     inset: 0;
     background: rgba(18,18,18,0.95);
@@ -149,18 +149,18 @@
     align-items: center;
     z-index: 10;
   }
-  #nicknameModalContent {
+  #usernameModalContent {
     background: #1f1f1f;
     padding: 24px 32px;
     border-radius: 12px;
     box-shadow: 0 0 15px #3a86ffaa;
     text-align: center;
   }
-  #nicknameModalContent h2 {
+  #usernameModalContent h2 {
     margin-bottom: 18px;
     color: #3a86ff;
   }
-  #nicknameModalContent input {
+  #usernameModalContent input {
     width: 100%;
     padding: 10px 14px;
     border-radius: 8px;
@@ -170,7 +170,7 @@
     background: #2a2a2a;
     color: #eee;
   }
-  #nicknameModalContent button {
+  #usernameModalContent button {
     margin-top: 16px;
     background: #3a86ff;
     border: none;
@@ -183,24 +183,24 @@
     width: 100%;
     transition: background-color 0.2s ease;
   }
-  #nicknameModalContent button:hover {
+  #usernameModalContent button:hover {
     background: #265ecf;
   }
 </style>
 </head>
 
 <body>
-<div id="nicknameModal" style="display:none;">
-  <div id="nicknameModalContent">
+<div id="usernameModal" style="display:none;">
+  <div id="usernameModalContent">
     <h2>Username</h2>
-    <input type="text" id="nicknameModalInput" placeholder="John" maxlength="35" />
-    <button id="nicknameModalSubmitBtn">Start chat</button>
+    <input type="text" id="usernameModalInput" placeholder="John" maxlength="35" />
+    <button id="usernameModalSubmitBtn">Start chat</button>
   </div>
 </div>
 
 <div id="app">
-  <aside id="userList">
-    <input type="text" id="userSearchInput" placeholder="Add a talk..." style="
+  <aside id="talkList">
+    <input type="text" id="talkSearchInput" placeholder="Add a talk..." style="
       width: 80%;
       margin: 10px 8px;
       padding: 8px 12px;
@@ -214,7 +214,7 @@
     <h2>Talks</h2>
   </aside>
   <section id="chatPanel">
-    <div id="chatHeader">Select user</div>
+    <div id="chatHeader">Select talk</div>
     <div id="messages"></div>
     <form id="messageForm" autocomplete="off">
       <input type="text" id="messageInput" placeholder="Write a message..." disabled />
@@ -238,18 +238,18 @@
 </div>
 
 <script>
-  const nicknameModal = document.getElementById('nicknameModal');
-  const nicknameModalInput = document.getElementById('nicknameModalInput');
-  const nicknameModalSubmitBtn = document.getElementById('nicknameModalSubmitBtn');
+  const usernameModal = document.getElementById('usernameModal');
+  const usernameModalInput = document.getElementById('usernameModalInput');
+  const usernameModalSubmitBtn = document.getElementById('usernameModalSubmitBtn');
   const app = document.getElementById('app');
-  const userListEl = document.getElementById('userList');
+  const talkListEl = document.getElementById('talkList');
+  const talkSearchInput = document.getElementById('talkSearchInput');
   const chatHeader = document.getElementById('chatHeader');
   const messagesEl = document.getElementById('messages');
   const messageForm = document.getElementById('messageForm');
   const attachBtn = document.getElementById('attachBtn');
   const fileInput = document.getElementById('fileInput');
   const messageInput = document.getElementById('messageInput');
-  const userSearchInput = document.getElementById('userSearchInput');
   const sendBtn = messageForm.querySelector('button');
 
   function getRandomColor() {
@@ -265,22 +265,22 @@
   }
 
   let myColor = localStorage.getItem("myColor") || "";
-  let myNick = localStorage.getItem("myNick") || "null";
-  let selectedUser = "Select user";
-  let users = JSON.parse(localStorage.getItem("talks") || "[]");
+  let myUsername = localStorage.getItem("myUsername") || "null";
+  let selectedTalk = "Select talk";
+  let talks = JSON.parse(localStorage.getItem("talks") || '["Open"]');
   let messages = [];
   let host = "http://localhost:9050";
   let interval = 5000;
   setInterval(checkMessages, interval);
 
   async function checkMessages() {
-    if (selectedUser == "Select user") { return; }
+    if (selectedTalk == "Select talk") { return; }
     let oldLength = messages.length;
     let lastmessageid = "";
     
     sendBtn.disabled = true;
     for (let i = messages.length; ; i++) {
-      let messageid = messages.length == 0 ? selectedUser : addStrNumber(selectedUser, i);
+      let messageid = messages.length == 0 ? selectedTalk : addStrNumber(selectedTalk, i);
       if (lastmessageid == messageid) break;
       let text = await getAsync(host, messageid);
       if (text == undefined || text == "" || text == null) break;
@@ -289,11 +289,9 @@
         text = JSON.parse(text);
       } catch{}
       messages.push(text);
-      console.log(messageid);
       renderChat();
     }
     sendBtn.disabled = false;
-
     if (interval == 7000) { interval = 10000; }
     if (interval == 5000) { interval = 7000; }
     if (interval == 3000) { interval = 5000; }
@@ -308,52 +306,52 @@
     }
   }
 
-  function renderUserList() {
-    const list = userListEl.querySelectorAll('.userItem').forEach(el => el.remove());
-    users.forEach(user => {
+  function renderTalkList() {
+    const list = talkListEl.querySelectorAll('.talkItem').forEach(el => el.remove());
+    talks.forEach(talk => {
       const div = document.createElement('div');
-      div.className = 'userItem' + (user === selectedUser ? ' active' : '');
-      div.dataset.username = user;
+      div.className = 'talkItem' + (talk === selectedTalk ? ' active' : '');
+      div.dataset.talkname = talk;
       const avatar = document.createElement('div');
       avatar.className = 'avatar';
-      avatar.textContent = user.trim().substring(0, 2).toUpperCase();
+      avatar.textContent = talk.trim().substring(0, 2).toUpperCase();
       const nameDiv = document.createElement('div');
-      nameDiv.className = 'userName';
-      nameDiv.textContent = user;
+      nameDiv.className = 'talkName';
+      nameDiv.textContent = talk;
       div.appendChild(avatar);
       div.appendChild(nameDiv);
       div.onclick = async () => {
-        if (user != selectedUser) {
+        if (talk != selectedTalk) {
           messages = [];
         }
-        selectedUser = user;
-        renderUserList();
+        selectedTalk = talk;
+        renderTalkList();
         renderChat();
         await checkMessages();
       };
-      userListEl.appendChild(div);
+      talkListEl.appendChild(div);
     });
   }
 
   function renderChat() {
-    if (!selectedUser) {
-      chatHeader.textContent = `Select user`;
+    if (!selectedTalk) {
+      chatHeader.textContent = `Select talk`;
       messagesEl.innerHTML = '';
       messageInput.disabled = true;
       sendBtn.disabled = true;
       return;
     }
-    chatHeader.textContent = `${selectedUser}`;
+    chatHeader.textContent = `${selectedTalk}`;
     messageInput.disabled = false;
     sendBtn.disabled = false;
     messagesEl.innerHTML = '';
     const chatMessages = messages;
     chatMessages.forEach(m => {
       const div = document.createElement('div');
-      div.className = 'message ' + (m.from === myNick ? 'from-me' : 'from-them');
+      div.className = 'message ' + (m.from === myUsername ? 'from-me' : 'from-them');
       div.innerHTML = `
         <div style="font-weight:600; font-size:0.8rem; margin-bottom:4px; color: ${m.color};">
-          ${m.from === myNick ? myNick : m.from}
+          ${m.from === myUsername ? myUsername : m.from}
           <span style="font-weight:400; font-size:0.7rem; color:#999; margin-left:8px;">
             ${new Date(m.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
           </span>
@@ -366,35 +364,35 @@
   }
 
   document.addEventListener('DOMContentLoaded', async function() {
-    if (selectedUser.length > 0 && myColor.length > 0) {
-      renderUserList();
+    if (selectedTalk.length > 0 && myColor.length > 0) {
+      renderTalkList();
     }
     else {
       app.style = "display:none;";
-      nicknameModal.style = '';
+      usernameModal.style = '';
     }
   });
 
-  userSearchInput.addEventListener('keydown', e => {
+  talkSearchInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const name = userSearchInput.value.trim();
-      if (!users.includes(name) && name !== myNick) {
-        users.push(name);
-        localStorage.setItem("talks", JSON.stringify(users));
-        renderUserList();
+      const name = talkSearchInput.value.trim();
+      if (!talks.includes(name) && name !== myUsername) {
+        talks.push(name);
+        localStorage.setItem("talks", JSON.stringify(talks));
+        renderTalkList();
       }
-      userSearchInput.value = '';
+      talkSearchInput.value = '';
     }
   });
 
   messageForm.addEventListener('submit', async e => {
     e.preventDefault();
     const text = messageInput.value.trim();
-    if (!text || !selectedUser) return;
-    let message = { from: myNick, to: selectedUser, text, time: new Date(), color: myColor, isfile: false };
+    if (!text || !selectedTalk) return;
+    let message = { from: myUsername, to: selectedTalk, text, time: new Date(), color: myColor, isfile: false };
     for (let i = 0; i < 5; i++){
-      number = await writeAsync(host, messages.length == 0 ? selectedUser : addStrNumber(selectedUser, messages.length + i), JSON.stringify(message));
+      let number = await writeAsync(host, messages.length == 0 ? selectedTalk : addStrNumber(selectedTalk, messages.length + i), JSON.stringify(message));
       if (number > 0) break;
     }
     await checkMessages();
@@ -402,25 +400,25 @@
     messageInput.value = '';
   });
 
-  nicknameModalSubmitBtn.onclick = () => {
-    const nick = nicknameModalInput.value.trim();
-    if (!nick) {
-      nicknameModalInput.focus();
+  usernameModalSubmitBtn.onclick = () => {
+    const username = usernameModalInput.value.trim();
+    if (!username) {
+      usernameModalInput.focus();
       return;
     }
-    myNick = nick;
+    myUsername = username;
     myColor = getRandomColor();
-    selectedUser = "Select user";
-    nicknameModal.style.display = 'none';
+    selectedTalk = "Select talk";
+    usernameModal.style.display = 'none';
     app.style.display = 'flex';
-    renderUserList();
+    renderTalkList();
     renderChat();
-    localStorage.setItem("myNick", myNick);
+    localStorage.setItem("myUsername", myUsername);
     localStorage.setItem("myColor", myColor);
   };
 
-  nicknameModalInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') nicknameModalSubmitBtn.click();
+  usernameModalInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') usernameModalSubmitBtn.click();
   });
 
   async function writeAsync(url, id, text, file = null) {
@@ -438,6 +436,5 @@
     return await response.text();
   }
 </script>
-
 </body>
 </html>
