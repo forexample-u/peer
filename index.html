@@ -269,40 +269,35 @@
   let selectedTalk = "Select talk";
   let talks = JSON.parse(localStorage.getItem("talks") || '["Open"]');
   let messages = [];
-  let host = "http://localhost:9050";
-  let interval = 5000;
+  let host = "http://peertest.liveblog365.com/index.php";
+  let interval = 12000;
   setInterval(checkMessages, interval);
 
   async function checkMessages() {
     if (selectedTalk == "Select talk") { return; }
-    let oldLength = messages.length;
-    let lastmessageid = "";
-    
-    sendBtn.disabled = true;
-    for (let i = messages.length; ; i++) {
-      let messageid = messages.length == 0 ? selectedTalk : addStrNumber(selectedTalk, i);
-      if (lastmessageid == messageid) break;
-      let text = await getAsync(host, messageid);
-      if (text == undefined || text == "" || text == null) break;
-      lastmessageid = messageid;
-      try {
-        text = JSON.parse(text);
-      } catch{}
-      messages.push(text);
-      renderChat();
-    }
-    sendBtn.disabled = false;
-    if (interval == 7000) { interval = 10000; }
-    if (interval == 5000) { interval = 7000; }
-    if (interval == 3000) { interval = 5000; }
-    if (interval == 2000) { interval = 3000; }
-    if (interval == 1500) { interval = 2000; }
-    if (interval == 1000) { interval = 1500; }
-    if (interval == 900) { interval = 1000; }
-    if (interval == 700) { interval = 900; }
-    if (interval == 500) { interval = 700; }
-    if (oldLength != messages.length) {
-      interval = 500;
+    if (document.visibilityState === 'visible')
+    {
+      let oldLength = messages.length;
+      let lastmessageid = "";
+      
+      sendBtn.disabled = true;
+      for (let i = messages.length; ; i++) {
+        let messageid = messages.length == 0 ? selectedTalk : addStrNumber(selectedTalk, i);
+        if (lastmessageid == messageid) break;
+        let text = await getAsync(host, messageid);
+        if (text == undefined || text == "" || text == null) break;
+        lastmessageid = messageid;
+        try {
+          text = JSON.parse(text);
+        } catch{}
+        messages.push(text);
+        renderChat();
+      }
+      sendBtn.disabled = false;
+      interval = Math.min(interval + 1000, 12000);
+      if (oldLength != messages.length) {
+        interval = 500;
+      }
     }
   }
 
