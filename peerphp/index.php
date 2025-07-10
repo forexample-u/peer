@@ -16,10 +16,11 @@ $db = $GLOBALS['db'];
 $method = $_SERVER['REQUEST_METHOD'];
 $segments = explode('/', trim(substr(strtok($_SERVER['REQUEST_URI'], '?'), strlen('/peer')), '/'));
 header('Content-Type: application/json; charset=utf-8');
+header("Access-Control-Allow-Origin: *");
 switch ($segments[0]) {
     case 'write':
         if ($method === 'POST') {
-            $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase);
+            $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase, $config::$MysqlPort);
             $datainformation = $db->get_info($mysqli);
             if ($datainformation->countQuery % 20 == 0) {
                 $db->shrink($mysqli);
@@ -35,7 +36,7 @@ switch ($segments[0]) {
             $mysqli->close();
             echo $deleteUnixAt;
         } elseif ($method === 'GET') {
-            $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase);
+            $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase, $config::$MysqlPort);
             $datainformation = $db->get_info($mysqli);
             if ($datainformation->countQuery % 20 == 0) {
                 $db->shrink($mysqli);
@@ -50,14 +51,14 @@ switch ($segments[0]) {
         break;
 
     case 'text':
-        $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase);
+        $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase, $config::$MysqlPort);
         $text = $db->get_text($mysqli, $segments[1]);
         $mysqli->close();
         echo $text;
         break;
 
     case 'file':
-        $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase);
+        $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase, $config::$MysqlPort);
         $data = $db->get_file($mysqli, $segments[1]);
         $mysqli->close();
         if ($data->filename !== "" && $data->filelength !== 0) {
@@ -72,7 +73,7 @@ switch ($segments[0]) {
         exit;
 
     case 'download':
-        $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase);
+        $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase, $config::$MysqlPort);
         $data = $db->get_file($mysqli, $segments[1]);
         $mysqli->close();
         if ($data->filename !== "" && $data->filelength !== 0) {
@@ -87,7 +88,7 @@ switch ($segments[0]) {
         break;
 
     case $config::$SecretUrlInitDatabase:
-        $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase);
+        $mysqli = new mysqli($config::$MysqlHost , $config::$MysqlUser, $config::$MysqlPassword, $config::$MysqlDatabase, $config::$MysqlPort);
         $db->init($mysqli);
         $mysqli->close();
         echo "peer";

@@ -45,7 +45,7 @@ class Config {
         self::$ConnectionString = isset($peerAdditional['ConnectionString']) ? (string)$peerAdditional['ConnectionString'] : null;
 
         self::$MysqlHost = isset($peerAdditional['MysqlHost']) ? (string)$peerAdditional['MysqlHost'] : null;
-        self::$MysqlPort = isset($peerAdditional['MysqlPort']) ? (int)$peerAdditional['MysqlPort'] : null;
+        self::$MysqlPort = isset($peerAdditional['MysqlPort']) ? (int)$peerAdditional['MysqlPort'] : 3306;
         self::$MysqlUser = isset($peerAdditional['MysqlUser']) ? (string)$peerAdditional['MysqlUser'] : null;
         self::$MysqlPassword = isset($peerAdditional['MysqlPassword']) ? (string)$peerAdditional['MysqlPassword'] : null;
         self::$MysqlDatabase = isset($peerAdditional['MysqlDatabase']) ? (string)$peerAdditional['MysqlDatabase'] : null;

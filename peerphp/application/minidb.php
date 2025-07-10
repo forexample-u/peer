@@ -34,7 +34,7 @@ class Minidb {
         $stmt->bind_param("sssisdb", $message->id, $message->text, $filename, $filelength, $contentType, $querySizeMB, $null);
         $stmt->send_long_data(6, $message->file->stream);
         $stmt->execute();
-        $mysqli->query("UPDATE datainfo SET count_query = count_query + 1, query_size_mb = query_size_mb + " . (string)$querySizeMB . ";");
+        $mysqli->query("UPDATE datainfo SET count_query = count_query + 1, query_size_mb = IFNULL(query_size_mb + " . (string)$querySizeMB . ", 0.0);");
         return $deleteUnixAt;
     }
 
@@ -103,7 +103,7 @@ class Minidb {
     function shrink(mysqli $mysqli) : void {
         $now = new DateTime('now', new DateTimeZone('UTC'));
         $nowUnix = $now->format('U');
-        $mysqli->query("UPDATE datainfo SET query_size_mb = query_size_mb - (SELECT SUM(query_size_mb) FROM data WHERE delete_unix_at < " . $nowUnix . ");");
+        $mysqli->query("UPDATE datainfo SET query_size_mb = query_size_mb - IFNULL((SELECT SUM(query_size_mb) FROM data WHERE delete_unix_at < " . $nowUnix . "), 0.0);");
         $mysqli->query("DELETE FROM data WHERE delete_unix_at < " . $nowUnix);
     }
 
