@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Peer chat</title>
+<style>
+  body, html {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #121212;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+  }
+  #app {
+    flex: 1;
+    display: flex;
+    height: calc(100vh - 50px);
+    border-top: 1px solid #333;
+  }
+  #userList {
+    width: 220px;
+    background: #1e1e1e;
+    border-right: 1px solid #333;
+    overflow-y: auto;
+  }
+  #userList h2 {
+    margin: 0;
+    padding: 15px;
+    font-size: 1.1rem;
+    border-bottom: 1px solid #333;
+    user-select: none;
+  }
+  .userItem {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #2c2c2c;
+    transition: background 0.2s;
+  }
+  .userItem:hover, .userItem.active {
+    background: #3a86ff;
+  }
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #555;
+    color: #ddd;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    user-select: none;
+  }
+  .userName {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #chatPanel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #171717;
+  }
+  #chatHeader {
+    padding: 15px 20px;
+    border-bottom: 1px solid #333;
+    font-weight: 600;
+    font-size: 1.2rem;
+    user-select: none;
+    background: #1f1f1f;
+    color: #3a86ff;
+  }
+  #messages {
+    flex: 1;
+    padding: 15px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .message {
+    max-width: 65%;
+    padding: 10px 14px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    line-height: 1.3;
+    word-wrap: break-word;
+  }
+  .message.from-me {
+    background: #2a2a2a; /* 3a86ff, efefef */
+    color: #ccc; /* white, black */
+    align-self: flex-start; /* flex-end */
+    border-bottom-right-radius: 4px;
+  }
+  .message.from-them {
+    background: #2a2a2a;
+    color: #ccc;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+  #messageForm {
+    display: flex;
+    padding: 12px 16px;
+    border-top: 1px solid #333;
+    background: #1f1f1f;
+  }
+  #messageForm input[type="text"] {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 20px;
+    border: none;
+    outline-offset: 2px;
+    font-size: 1rem;
+    background: #2a2a2a;
+    color: #eee;
+  }
+  #messageForm input[type="text"]::placeholder {
+    color: #777;
+  }
+  #messageForm button {
+    margin-left: 12px;
+    background: #3a86ff;
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 0 18px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s ease;
+  }
+  #messageForm button:hover {
+    background: #265ecf;
+  }
+  #nicknameModal {
+    position: fixed;
+    inset: 0;
+    background: rgba(18,18,18,0.95);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+  }
+  #nicknameModalContent {
+    background: #1f1f1f;
+    padding: 24px 32px;
+    border-radius: 12px;
+    box-shadow: 0 0 15px #3a86ffaa;
+    text-align: center;
+  }
+  #nicknameModalContent h2 {
+    margin-bottom: 18px;
+    color: #3a86ff;
+  }
+  #nicknameModalContent input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1.1rem;
+    outline-offset: 2px;
+    background: #2a2a2a;
+    color: #eee;
+  }
+  #nicknameModalContent button {
+    margin-top: 16px;
+    background: #3a86ff;
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    width: 100%;
+    transition: background-color 0.2s ease;
+  }
+  #nicknameModalContent button:hover {
+    background: #265ecf;
+  }
+</style>
+</head>
+
+<body>
+<div id="nicknameModal" style="display:none;">
+  <div id="nicknameModalContent">
+    <h2>Username</h2>
+    <input type="text" id="nicknameModalInput" placeholder="John" maxlength="35" />
+    <button id="nicknameModalSubmitBtn">Start chat</button>
+  </div>
+</div>
+
+<div id="app">
+  <aside id="userList">
+    <input type="text" id="userSearchInput" placeholder="Add a talk..." style="
+      width: 80%;
+      margin: 10px 8px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+      outline-offset: 2px;
+      background: #2a2a2a;
+      color: #eee;
+    " />
+    <h2>Talks</h2>
+  </aside>
+  <section id="chatPanel">
+    <div id="chatHeader">Select user</div>
+    <div id="messages"></div>
+    <form id="messageForm" autocomplete="off">
+      <input type="text" id="messageInput" placeholder="Write a message..." disabled />
+      <button type="submit" disabled>Send</button>
+    </form>
+    <button type="button" id="attachBtn" title="Attach file" style="
+        background: #555;
+        margin-left: 8px;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        display:none;
+      " disabled>📎</button>
+      <input type="file" id="fileInput" style="display:none;" />
+  </section>
+</div>
+
+<script>
+  const nicknameModal = document.getElementById('nicknameModal');
+  const nicknameModalInput = document.getElementById('nicknameModalInput');
+  const nicknameModalSubmitBtn = document.getElementById('nicknameModalSubmitBtn');
+  const app = document.getElementById('app');
+  const userListEl = document.getElementById('userList');
+  const chatHeader = document.getElementById('chatHeader');
+  const messagesEl = document.getElementById('messages');
+  const messageForm = document.getElementById('messageForm');
+  const attachBtn = document.getElementById('attachBtn');
+  const fileInput = document.getElementById('fileInput');
+  const messageInput = document.getElementById('messageInput');
+  const userSearchInput = document.getElementById('userSearchInput');
+  const sendBtn = messageForm.querySelector('button');
+
+  function getRandomColor() {
+    const r = Math.floor(Math.random() * 156) + 100;
+    const g = Math.floor(Math.random() * 156) + 100;
+    const b = Math.floor(Math.random() * 156) + 100;
+    const hex = n => n.toString(16).padStart(2, '0');
+    return `#${hex(r)}${hex(g)}${hex(b)}`;
+  }
+
+  function addStrNumber(str, add) {
+    return str.replace(/(\d+)?$/, (m, n) => n ? +n + add : add);
+  }
+
+  let myColor = localStorage.getItem("myColor") || "";
+  let myNick = localStorage.getItem("myNick") || "null";
+  let selectedUser = "Select user";
+  let users = JSON.parse(localStorage.getItem("talks") || "[]");
+  let messages = [];
+  let host = "http://localhost:9050";
+  let interval = 5000;
+  setInterval(checkMessages, interval);
+
+  async function checkMessages() {
+    if (selectedUser == "Select user") { return; }
+    let oldLength = messages.length;
+    let lastmessageid = "";
+    
+    sendBtn.disabled = true;
+    for (let i = messages.length; ; i++) {
+      let messageid = messages.length == 0 ? selectedUser : addStrNumber(selectedUser, i);
+      if (lastmessageid == messageid) break;
+      let text = await getAsync(host, messageid);
+      if (text == undefined || text == "" || text == null) break;
+      lastmessageid = messageid;
+      try {
+        text = JSON.parse(text);
+      } catch{}
+      messages.push(text);
+      console.log(messageid);
+      renderChat();
+    }
+    sendBtn.disabled = false;
+
+    if (interval == 7000) { interval = 10000; }
+    if (interval == 5000) { interval = 7000; }
+    if (interval == 3000) { interval = 5000; }
+    if (interval == 2000) { interval = 3000; }
+    if (interval == 1500) { interval = 2000; }
+    if (interval == 1000) { interval = 1500; }
+    if (interval == 900) { interval = 1000; }
+    if (interval == 700) { interval = 900; }
+    if (interval == 500) { interval = 700; }
+    if (oldLength != messages.length) {
+      interval = 500;
+    }
+  }
+
+  function renderUserList() {
+    const list = userListEl.querySelectorAll('.userItem').forEach(el => el.remove());
+    users.forEach(user => {
+      const div = document.createElement('div');
+      div.className = 'userItem' + (user === selectedUser ? ' active' : '');
+      div.dataset.username = user;
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = user.trim().substring(0, 2).toUpperCase();
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'userName';
+      nameDiv.textContent = user;
+      div.appendChild(avatar);
+      div.appendChild(nameDiv);
+      div.onclick = async () => {
+        if (user != selectedUser) {
+          messages = [];
+        }
+        selectedUser = user;
+        renderUserList();
+        renderChat();
+        await checkMessages();
+      };
+      userListEl.appendChild(div);
+    });
+  }
+
+  function renderChat() {
+    if (!selectedUser) {
+      chatHeader.textContent = `Select user`;
+      messagesEl.innerHTML = '';
+      messageInput.disabled = true;
+      sendBtn.disabled = true;
+      return;
+    }
+    chatHeader.textContent = `${selectedUser}`;
+    messageInput.disabled = false;
+    sendBtn.disabled = false;
+    messagesEl.innerHTML = '';
+    const chatMessages = messages;
+    chatMessages.forEach(m => {
+      const div = document.createElement('div');
+      div.className = 'message ' + (m.from === myNick ? 'from-me' : 'from-them');
+      div.innerHTML = `
+        <div style="font-weight:600; font-size:0.8rem; margin-bottom:4px; color: ${m.color};">
+          ${m.from === myNick ? myNick : m.from}
+          <span style="font-weight:400; font-size:0.7rem; color:#999; margin-left:8px;">
+            ${new Date(m.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+          </span>
+        </div>
+        <div>${m.text == undefined ? m : m.text}</div>
+      `;
+      messagesEl.appendChild(div);
+    });
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  document.addEventListener('DOMContentLoaded', async function() {
+    if (selectedUser.length > 0 && myColor.length > 0) {
+      renderUserList();
+    }
+    else {
+      app.style = "display:none;";
+      nicknameModal.style = '';
+    }
+  });
+
+  userSearchInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const name = userSearchInput.value.trim();
+      if (!users.includes(name) && name !== myNick) {
+        users.push(name);
+        localStorage.setItem("talks", JSON.stringify(users));
+        renderUserList();
+      }
+      userSearchInput.value = '';
+    }
+  });
+
+  messageForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const text = messageInput.value.trim();
+    if (!text || !selectedUser) return;
+    let message = { from: myNick, to: selectedUser, text, time: new Date(), color: myColor, isfile: false };
+    for (let i = 0; i < 5; i++){
+      number = await writeAsync(host, messages.length == 0 ? selectedUser : addStrNumber(selectedUser, messages.length + i), JSON.stringify(message));
+      if (number > 0) break;
+    }
+    await checkMessages();
+    renderChat();
+    messageInput.value = '';
+  });
+
+  nicknameModalSubmitBtn.onclick = () => {
+    const nick = nicknameModalInput.value.trim();
+    if (!nick) {
+      nicknameModalInput.focus();
+      return;
+    }
+    myNick = nick;
+    myColor = getRandomColor();
+    selectedUser = "Select user";
+    nicknameModal.style.display = 'none';
+    app.style.display = 'flex';
+    renderUserList();
+    renderChat();
+    localStorage.setItem("myNick", myNick);
+    localStorage.setItem("myColor", myColor);
+  };
+
+  nicknameModalInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') nicknameModalSubmitBtn.click();
+  });
+
+  async function writeAsync(url, id, text, file = null) {
+    const formData = new FormData();
+    formData.append('text', text);
+    if (file) {
+      formData.append('file', file, file.name);
+    }
+    const response = await fetch(`${url}/peer/write/${id}`, { method: 'POST', body: formData });
+    return Number(await response.text());
+  }
+
+  async function getAsync(url, id) {
+    const response = await fetch(`${url}/peer/text/${id}`);
+    return await response.text();
+  }
+</script>
+
+</body>
+</html>
