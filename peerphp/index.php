@@ -15,6 +15,12 @@ if (!isset($GLOBALS['db'])) {
 $db = $GLOBALS['db'];
 $method = $_SERVER['REQUEST_METHOD'];
 $segments = explode('/', trim(substr(strtok($_SERVER['REQUEST_URI'], '?'), strlen('/peer')), '/'));
+if (strpos($segments[0], "php") !== false) {
+    array_shift($segments);
+}
+if ($segments[0] === "peer") {
+    array_shift($segments);
+}
 header('Content-Type: application/json; charset=utf-8');
 header("Access-Control-Allow-Origin: *");
 switch ($segments[0]) {
