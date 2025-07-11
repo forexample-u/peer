@@ -289,7 +289,12 @@
         lastmessageid = messageid;
         try {
           text = JSON.parse(text);
-        } catch{}
+        } catch {
+            if (text.trim().startsWith('<html') && text.includes('</noscript>')) {
+              interval = 10000;
+              break; 
+            }
+        }
         messages.push(text);
         renderChat();
       }
@@ -360,6 +365,8 @@
 
   document.addEventListener('DOMContentLoaded', async function() {
     if (selectedTalk.length > 0 && myColor.length > 0) {
+      messageInput.disabled = true;
+      sendBtn.disabled = true;
       renderTalkList();
     }
     else {
