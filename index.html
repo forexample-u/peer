@@ -252,6 +252,15 @@
   const messageInput = document.getElementById('messageInput');
   const sendBtn = messageForm.querySelector('button');
 
+  let myColor = localStorage.getItem("myColor") || "";
+  let myUsername = localStorage.getItem("myUsername") || "null";
+  let selectedTalk = "Select talk";
+  let talks = JSON.parse(localStorage.getItem("talks") || '["Open"]');
+  let messages = [];
+  let host = "https://peertest.liveblog365.com/index.php";
+  let interval = 12000;
+  setInterval(checkMessages, interval);
+
   function getRandomColor() {
     const r = Math.floor(Math.random() * 156) + 100;
     const g = Math.floor(Math.random() * 156) + 100;
@@ -263,15 +272,6 @@
   function addStrNumber(str, add) {
     return str.replace(/(\d+)?$/, (m, n) => n ? +n + add : add);
   }
-
-  let myColor = localStorage.getItem("myColor") || "";
-  let myUsername = localStorage.getItem("myUsername") || "null";
-  let selectedTalk = "Select talk";
-  let talks = JSON.parse(localStorage.getItem("talks") || '["Open"]');
-  let messages = [];
-  let host = "https://peertest.liveblog365.com/index.php";
-  let interval = 12000;
-  setInterval(checkMessages, interval);
 
   async function checkMessages() {
     if (selectedTalk == "Select talk") { return; }
@@ -296,13 +296,30 @@
             }
         }
         messages.push(text);
-        renderChat();
+        if (i % 5 == 0) {
+          renderChat();
+        }
       }
+      renderChat();
       sendBtn.disabled = false;
       interval = Math.min(interval + 1000, 12000);
       if (oldLength != messages.length) {
         interval = 500;
       }
+    }
+  }
+
+  async function readMessagesFromUrl(){
+    const urlParams = new URLSearchParams(window.location.search);
+    const talkId = urlParams.get('talk');
+    if (talkId != undefined && talkId != null && talkId != "") {
+      selectedTalk = talkId;
+      if (!talks.includes(selectedTalk)) {
+        talks.push(selectedTalk);
+        localStorage.setItem("talks", JSON.stringify(talks));
+      }
+      renderTalkList();
+      await checkMessages();
     }
   }
 
@@ -325,6 +342,9 @@
           messages = [];
         }
         selectedTalk = talk;
+        const url = new URL(window.location);
+        url.searchParams.set('talk', selectedTalk);
+        window.history.replaceState(null, '', url);
         renderTalkList();
         renderChat();
         await checkMessages();
@@ -367,6 +387,7 @@
     if (selectedTalk.length > 0 && myColor.length > 0) {
       messageInput.disabled = true;
       sendBtn.disabled = true;
+      await readMessagesFromUrl();
       renderTalkList();
     }
     else {
@@ -402,7 +423,7 @@
     messageInput.value = '';
   });
 
-  usernameModalSubmitBtn.onclick = () => {
+  usernameModalSubmitBtn.onclick = async () => {
     const username = usernameModalInput.value.trim();
     if (!username) {
       usernameModalInput.focus();
@@ -417,6 +438,7 @@
     renderChat();
     localStorage.setItem("myUsername", myUsername);
     localStorage.setItem("myColor", myColor);
+    await readMessagesFromUrl();
   };
 
   usernameModalInput.addEventListener('keydown', e => {
