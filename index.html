@@ -388,6 +388,9 @@
       messageInput.disabled = true;
       sendBtn.disabled = true;
       await readMessagesFromUrl();
+      if (selectedTalk == "Select talk" && window.screen.height > window.screen.width){
+        selectedTalk = "Open";
+      }
       renderTalkList();
     }
     else {
@@ -432,6 +435,9 @@
     myUsername = username;
     myColor = getRandomColor();
     selectedTalk = "Select talk";
+    if (window.screen.height > window.screen.width){
+      selectedTalk = "Open";
+    }
     usernameModal.style.display = 'none';
     app.style.display = 'flex';
     renderTalkList();
