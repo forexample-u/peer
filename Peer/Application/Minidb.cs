@@ -22,21 +22,21 @@ public class Minidb
     public long BlockInBytes { get; private set; } = 0;
     public long SizeAllBlockInBytes { get; private set; } = 0;
 
-    public long Write(Message message)
+    public long Write(long id, Message message)
     {
         string contentType = message.File?.ContentType ?? "";
         string fileName = message.File?.FileName ?? "";
         long fileSize = message.File?.Length ?? 0;
         long textSize = message.Text?.Length ?? 0;
         long querySize = textSize + fileSize;
-        if (textSize > Config.MaxSizeText || querySize > Config.MaxSizeOneQuery || _blocks.ContainsKey(message.Id))
+        if (textSize > Config.MaxSizeText || querySize > Config.MaxSizeOneQuery || _blocks.ContainsKey(id))
         {
             return 0;
         }
 
         if (message.File != null)
         {
-            using var stream = new FileStream(Path.Combine(_filePath, message.Id.ToString() + Path.GetExtension(fileName)), FileMode.Create);
+            using var stream = new FileStream(Path.Combine(_filePath, id.ToString() + Path.GetExtension(fileName)), FileMode.Create);
             message.File?.CopyTo(stream);
         }
 
@@ -46,8 +46,8 @@ public class Minidb
             addSecond = querySize > Config.Limit1SmallSizeOneQuery ? Config.Limit1BigMessageSecond : Config.Limit1SmallMessageSecond;
         }
         long deleteUnixAt = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds() + addSecond;
-        _blockData.Add(new Data(message.Id, message.Text, 0, fileName, deleteUnixAt, contentType, fileSize));
-        _blocks[message.Id] = new Block(BlockIndex, deleteUnixAt);
+        _blockData.Add(new Data(id, message.Text, 0, fileName, deleteUnixAt, contentType, fileSize));
+        _blocks[id] = new Block(BlockIndex, deleteUnixAt);
         SizeAllBlockInBytes += querySize;
         BlockInBytes += querySize;
         return deleteUnixAt;

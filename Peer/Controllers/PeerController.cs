@@ -12,10 +12,10 @@ public class PeerController : ControllerBase
     public static DateTime NextCommitTime = DateTime.UtcNow.AddSeconds(Config.CommitBlockSecond);
     public static long CountQuery = 0;
 
-    [HttpPost("write")]
-    public long Write(Message message)
+    [HttpPost("write/{id}")]
+    public long Write(long id, Message message)
     {
-        long deleteUnixAt = _db.Write(message);
+        long deleteUnixAt = _db.Write(id, message);
         if (deleteUnixAt <= 0) return deleteUnixAt;
         CountQuery += 1;
         if (CountQuery % 20 == 0)
@@ -33,17 +33,30 @@ public class PeerController : ControllerBase
     [HttpGet("write/{id}/{text}")]
     public long Write(long id, string text)
     {
-        return Write(new Message() { Text = text, Id = id });
+        return Write(id, new Message() { Text = text });
     }
 
-    [HttpGet("get/{id}")]
-    public string Get(long id)
+    [HttpGet("text/{id}")]
+    public string Text(long id)
     {
         return _db.Get(id)?.Text ?? "";
     }
 
-    [HttpGet("getfile/{id}")]
-    public IActionResult GetFile(long id)
+    [HttpGet("file/{id}")]
+    public IActionResult File(long id)
+    {
+        Data data = _db.Get(id);
+        if (data != null)
+        {
+            string fullPath = Path.Combine("peer", id.ToString() + Path.GetExtension(data.Filename));
+            Response.Headers.Add("Content-Disposition", $"inline; filename*=UTF-8''{Uri.EscapeDataString(data.Filename)}");
+            return File(fullPath, data.ContentType, data.Filename);
+        }
+        return NotFound();
+    }
+
+    [HttpGet("download/{id}")]
+    public IActionResult Download(long id)
     {
         Data data = _db.Get(id);
         if (data != null)
@@ -52,12 +65,5 @@ public class PeerController : ControllerBase
             return File(fullPath, data.ContentType, data.Filename);
         }
         return NotFound();
-    }
-
-    [HttpGet("getfilepath/{id}")]
-    public string GetFilePath(long id)
-    {
-        Data data = _db.Get(id);
-        return (data?.Filename?.Length ?? 0) == 0 ? "" : Config.WebUrlFilePath + "/" + id.ToString() + Path.GetExtension(data.Filename);
     }
 }

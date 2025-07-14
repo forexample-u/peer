@@ -1,8 +1,12 @@
-﻿namespace Peer.Domain;
+﻿using Microsoft.AspNetCore.Mvc;
+
+namespace Peer.Domain;
 
 public class Message
 {
-    public long Id { get; set; }
+    [FromForm(Name = "text")]
     public string Text { get; set; }
+
+    [FromForm(Name = "file")]
     public IFormFile? File { get; set; }
 }
