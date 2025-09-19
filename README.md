@@ -1,6 +1,6 @@
 # Peer
 
-**Peer** is a server that can run many apps at the same time.
+**Peer** is the server hosting the files with the index
 
 For example, you can create a chat, a task tracker, or share files between users (peer-to-peer).
 
@@ -11,6 +11,8 @@ There are many challenges such as:
 - load balancing on the server
 
 Peer helps solve these problems, so you only need to create a frontend for your application to work.
+
+All endpoints should be free of cors!
 
 ## API Endpoints
 
