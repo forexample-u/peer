@@ -1,65 +1,37 @@
+from flask import Flask, request, jsonify, Response, send_from_directory
 import os
-from flask import Flask, request, jsonify, send_file
-from datetime import datetime, timedelta
-from werkzeug.datastructures.file_storage import FileStorage
-from domain.data import Data
-from domain.message import Message
-from config import Config
-from application.minidb import Minidb
+import random
+import string
 
 app = Flask(__name__)
-db = None
-next_commit_time = 0
-count_query = 0
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-def write(message_id, message_text, file: FileStorage):
-    global count_query
-    global next_commit_time
-    delete_unix_at = db.write(Message(message_id, message_text, file))
-    if (delete_unix_at <= 0): return str(delete_unix_at)
-    count_query += 1
-    if count_query % 20 == 0:
-        db.shrink()
-    if db.block_in_bytes > Config.avg_size_block or datetime.utcnow() > next_commit_time:
-        next_commit_time = datetime.utcnow() + timedelta(seconds=Config.commit_block_second)
-        db.commit()
-    return str(delete_unix_at)
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,Cache-Control')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
-@app.route('/peer/write', methods=['POST'])
-def write_post():
-    message_id = int(request.form.get('Id'))
-    message_text = request.form.get('Text')
-    file = request.files.get('File')
-    return write(message_id, message_text, file)
+@app.route('/peer/<path:filename>')
+def static_file(filename):
+    return send_from_directory('static', filename)
 
-@app.route('/peer/write/<int:id>/<text>', methods=['GET'])
-def write_get(id, text):
-    return write(id, text, None)
+@app.route('/peer/upload', methods=['POST'])
+def upload():
+    file = request.files['file']
+    file_length = len(file.read())
+    file.seek(0)
+    file_id = ''.join(random.choices(string.digits, k=32))
+    file_name = os.path.basename(file.filename)
+    file.save(os.path.join(UPLOAD_FOLDER, f"{file_id}{file_name}"))
+    current_url = request.host_url.rstrip('/')
+    return f"{current_url}/static/{file_id}{file_name}", 200
 
-@app.route('/peer/get/<int:id>', methods=['GET'])
-def get(id):
-    data = db.get(id)
-    return data.text if data else ''
-
-@app.route('/peer/getfile/<int:id>', methods=['GET'])
-def getfile(id):
-    data = db.get(id)
-    if data:
-        _, extension = os.path.splitext(data.filename)
-        full_path = os.path.join(Config.file_path, str(id) + extension)
-        return send_file(full_path, download_name=data.filename, mimetype=data.content_type)
-    return '', 404
-
-@app.route('/peer/getfilepath/<int:id>', methods=['GET'])
-def get_file_path(id):
-    data = db.get(id)
-    return f"{Config.web_url_file_path}/{id}{os.path.splitext(data.filename)[1]}" if data and data.file_size_of_bytes > 0 else ""
+@app.route('/index.html')
+def index():
+    return send_from_directory('static', 'index.html')
 
 if __name__ == '__main__':
-    Config.load()
-    dir_path = os.path.join(Config.file_path)
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
-    db = Minidb(os.path.join(Config.text_path), os.path.join(Config.file_path))
-    next_commit_time = datetime.utcnow() + timedelta(seconds=Config.commit_block_second)
-    app.run()
+    app.run(debug=True)

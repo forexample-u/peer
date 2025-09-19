@@ -21,24 +21,15 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="application\minidb.py" />
-    <Compile Include="config.py" />
-    <Compile Include="domain\block.py" />
-    <Compile Include="domain\data.py" />
-    <Compile Include="domain\message.py" />
     <Compile Include="peerpy.py" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="config.json" />
+    <Content Include="static\index.html" />
+    <Content Include="static\small.txt" />
     <Content Include="requirements.txt" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="data\text\" />
-    <Folder Include="domain\" />
-    <Folder Include="application\" />
-    <Folder Include="data\" />
     <Folder Include="static\" />
-    <Folder Include="static\peer\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
