@@ -1,69 +1,75 @@
 using Microsoft.AspNetCore.Mvc;
-using Peer.Application;
-using Peer.Domain;
 
 namespace Peer.Controllers;
+
+public class Message
+{
+    [FromForm(Name = "file")]
+    public IFormFile? File { get; set; }
+}
 
 [ApiController]
 [Route("peer")]
 public class PeerController : ControllerBase
 {
-    private static Minidb _db = new Minidb(Config.TextPath, Config.FilePath);
-    public static DateTime NextCommitTime = DateTime.UtcNow.AddSeconds(Config.CommitBlockSecond);
-    public static long CountQuery = 0;
-
-    [HttpPost("write/{id}")]
-    public long Write(long id, Message message)
+    [HttpPost("upload")]
+    public string Upload(Message message)
     {
-        long deleteUnixAt = _db.Write(id, message);
-        if (deleteUnixAt <= 0) return deleteUnixAt;
-        CountQuery += 1;
-        if (CountQuery % 20 == 0)
+        if (message.File == null || message.File.Length > 28311552)
         {
-            _db.Shrink();
+            return "";
         }
-        if (_db.BlockInBytes > Config.AvgSizeBlock || DateTime.UtcNow > NextCommitTime)
+        string filename = message.File.FileName ?? "";
+        for (int i = 0; ; i++)
         {
-            NextCommitTime = DateTime.UtcNow.AddSeconds(Config.CommitBlockSecond);
-            _db.Commit();
+            string id = i.ToString() + "_" + filename;
+            if (System.IO.File.Exists(Path.Combine("wwwroot", "peer", id)))
+            {
+                continue;
+            }
+            try
+            {
+                using var stream = new FileStream(Path.Combine("wwwroot", "peer", id), FileMode.CreateNew);
+                message.File.CopyTo(stream);
+                return $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}/peer/{id}";
+            }
+            catch
+            {
+                if (System.IO.File.Exists(Path.Combine("wwwroot", "peer", id)))
+                {
+                    continue;
+                }
+                return "";
+            }
         }
-        return deleteUnixAt;
-    }
-
-    [HttpGet("write/{id}/{text}")]
-    public long Write(long id, string text)
-    {
-        return Write(id, new Message() { Text = text });
-    }
-
-    [HttpGet("text/{id}")]
-    public string Text(long id)
-    {
-        return _db.Get(id)?.Text ?? "";
     }
 
     [HttpGet("file/{id}")]
-    public IActionResult File(long id)
+    public IActionResult File(string id)
     {
-        Data data = _db.Get(id);
-        if (data != null)
+        if (!System.IO.File.Exists(Path.Combine("wwwroot", "peer", id)))
         {
-            string fullPath = Path.Combine("peer", id.ToString() + Path.GetExtension(data.Filename));
-            Response.Headers.Add("Content-Disposition", $"inline; filename*=UTF-8''{Uri.EscapeDataString(data.Filename)}");
-            return File(fullPath, data.ContentType, data.Filename);
+            return NotFound();
         }
-        return NotFound();
+        string filename = string.Concat(id.Split("_").Skip(1));
+        string contentType = GetContentType(Path.GetExtension(filename));
+        Response.Headers.Add("Content-Disposition", "inline");
+        return File(Path.Combine("peer", id));
     }
 
-    [HttpGet("download/{id}")]
-    public IActionResult Download(long id)
+    private string GetContentType(string ext)
     {
-        Data data = _db.Get(id);
-        if (data != null)
-        {
-            string fullPath = Path.Combine("peer", id.ToString() + Path.GetExtension(data.Filename));
-            return File(fullPath, data.ContentType, data.Filename);
-        }
-        return NotFound();
+        string type = "application/octet-stream";
+        if (ext == ".html") { type = "text/html"; }
+        if (ext == ".json") { type = "application/json"; }
+        if (ext == ".jpeg") { type = "image/jpeg"; }
+        if (ext == ".txt") { type = "text/plain"; }
+        if (ext == ".jpg") { type = "image/jpeg"; }
+        if (ext == ".png") { type = "image/png"; }
+        if (ext == ".gif") { type = "image/gif"; }
+        if (ext == ".mp4") { type = "video/mp4"; }
+        if (ext == ".mp3") { type = "audio/mpeg"; }
+        if (ext == ".pdf") { type = "application/pdf"; }
+        return type;
     }
 }
