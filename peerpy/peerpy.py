@@ -1,7 +1,5 @@
 from flask import Flask, request, jsonify, Response, send_from_directory
 import os
-import random
-import string
 
 app = Flask(__name__)
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static')
@@ -21,13 +19,25 @@ def static_file(filename):
 @app.route('/peer/upload', methods=['POST'])
 def upload():
     file = request.files['file']
+    if file is None:
+        return "", 400
     file_length = len(file.read())
     file.seek(0)
-    file_id = ''.join(random.choices(string.digits, k=32))
-    file_name = os.path.basename(file.filename)
-    file.save(os.path.join(UPLOAD_FOLDER, f"{file_id}{file_name}"))
-    current_url = request.host_url.rstrip('/')
-    return f"{current_url}/static/{file_id}{file_name}", 200
+    i = 0
+    while True:
+        file_id = f"{i}_{file.filename}"
+        i += 1
+        file_path = os.path.join(UPLOAD_FOLDER, file_id)
+        if os.path.exists(file_path):
+            continue
+        try:
+            file.save(file_path)
+            url = f"{request.host_url.rstrip('/')}/peer/{file_id}"
+            return url, 200
+        except Exception:
+            if os.path.exists(file_path):
+                continue
+            return "", 500
 
 @app.route('/index.html')
 def index():
