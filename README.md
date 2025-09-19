@@ -14,12 +14,9 @@ Peer helps solve these problems, so you only need to create a frontend for your 
 
 ## API Endpoints
 
-Peer includes 5 API endpoints: <br />
+Peer includes 2 API endpoints: <br />
 
 | Method | Endpoint                      | Parameters                 |
 | ------ | ----------------------------- | -------------------------- |
-| POST   | {host}/peer/write/{id}        | text (string), file (blob) |
-| GET    | {host}/peer/write/{id}/{text} | text (string)              |
-| GET    | {host}/peer/text/{id}         | —                          |
-| GET    | {host}/peer/file/{id}         | —                          |
-| GET    | {host}/peer/download/{id}     | —                          |
+| POST   | {host}/peer/upload            | file (blob)                |
+| GET    | {host}/peer/{id}              | text (string)              |
