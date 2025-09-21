@@ -1,6 +1,5 @@
 <?php
 $uploadFolder = __DIR__ . '/peer';
-$method = $_SERVER['REQUEST_METHOD'];
 $segments = explode('/', trim(substr(strtok($_SERVER['REQUEST_URI'], '?'), strlen('/peer')), '/'));
 if (strpos($segments[0], "php") !== false) {
     array_shift($segments);
@@ -12,7 +11,7 @@ header('Content-Type: application/json; charset=utf-8');
 header("Access-Control-Allow-Origin: *");
 switch ($segments[0]) {
     case 'upload':
-        if ($method === 'POST') {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
                 http_response_code(400);
                 echo "";
