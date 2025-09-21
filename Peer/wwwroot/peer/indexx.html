@@ -236,6 +236,7 @@
 
   <script>
     const host = location.origin;
+    const hostupload = location.origin;
     const usernameModal = document.getElementById('usernameModal');
     const usernameModalInput = document.getElementById('usernameModalInput');
     const usernameModalSubmitBtn = document.getElementById('usernameModalSubmitBtn');
@@ -270,11 +271,15 @@
     }
 
     async function getAsync(url, filename) {
-      const response = await fetch(`${url}/peer/${filename}`);
-      if (!response.ok) {
+      try {
+        const response = await fetch(`${url}/peer/${filename}`);
+        if (!response.ok) {
+          return null;
+        }
+        return await response.text();
+      } catch {
         return null;
       }
-      return await response.text();
     }
 
     async function renderMessages() {
@@ -334,14 +339,14 @@
       const file = fileInput.files[0];
       let fileurl = null;
       if (file != undefined && file != null) {
-        fileurl = await uploadAsync(host, file.name, file);
+        fileurl = await uploadAsync(hostupload, file.name, file);
       }
       const message = { from: username, text, time: new Date(), color: color, fileurl: fileurl };
       if (!text) return;
       let isSuccess = false;
       const blob = new Blob([JSON.stringify(message)], { type: 'text/plain' });
       for (let i = 0; i < 5; i++) {
-        let messageid = await uploadAsync(host, `data.json`, blob);
+        let messageid = await uploadAsync(hostupload, `data.json`, blob);
         if (messageid != "") { isSuccess = true; break; }
       }
       await renderMessages();
