@@ -50,7 +50,13 @@ switch ($segments[0]) {
         break;
 
     default:
-        http_response_code(404);
+        $filename = $uploadFolder . "/" . $segments[0];
+        if (file_exists($filename)) {
+            echo file_get_contents($filename);
+        }
+        else {
+            http_response_code(404);
+        }
         break;
 }
 ?>
