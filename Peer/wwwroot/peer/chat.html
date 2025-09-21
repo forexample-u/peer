@@ -98,7 +98,7 @@
       color: #777;
     }
 
-    #messageForm button {
+    #sendbutton {
       margin-left: 12px;
       background: #3a86ff;
       border: none;
@@ -111,7 +111,7 @@
       transition: background-color 0.2s ease;
     }
 
-    #messageForm button:hover {
+    #sendbutton:hover {
       background: #265ecf;
     }
 
@@ -183,6 +183,33 @@
     ::-webkit-scrollbar-thumb:hover {
       background: #777;
     }
+
+    #attachBtn {
+      background: #2a2a2a;
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      padding: 10px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.2s ease;
+      margin-right: 12px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #attachBtn:hover {
+      background: #36393e;
+    }
+
+    #attachBtn:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 
@@ -199,23 +226,11 @@
       <div id="chatHeader">Chat</div>
       <div id="messages"></div>
       <form id="messageForm" autocomplete="off">
+        <button type="button" id="attachBtn" title="Attach file">📎</button>
         <input type="text" id="messageInput" placeholder="Write a message..." />
-        <button type="submit">Send</button>
+        <button type="submit" id="sendbutton">Send</button>
+        <input type="file" id="fileInput" style="display:none;" />
       </form>
-      <button type="button" id="attachBtn" title="Attach file" style="
-        background: #555;
-        margin-left: 8px;
-        border-radius: 50%;
-        width: 36px;
-        height: 36px;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        display: none;
-      " disabled>📎</button>
-      <input type="file" id="fileInput" style="display:none;" />
     </section>
   </div>
 
@@ -247,9 +262,8 @@
       return `#${hex(r)}${hex(g)}${hex(b)}`;
     }
 
-    async function writeAsync(url, filename, text) {
+    async function uploadAsync(url, filename, blob) {
       const formData = new FormData();
-      const blob = new Blob([text], { type: 'text/plain' });
       formData.append('file', blob, filename);
       const response = await fetch(`${url}/peer/upload`, { method: 'POST', body: formData });
       return await response.text();
@@ -285,7 +299,7 @@
       messages.push(data);
       const div = document.createElement('div');
       div.className = 'message ' + (data.from === username && data.color == color ? 'from-me' : 'from-them');
-      div.innerHTML = `
+      let messageHTML = `
         <div style="font-weight:600; font-size:0.8rem; margin-bottom:4px; color: ${data.color};">
           ${data.from === username ? username : data.from}
           <span style="font-weight:400; font-size:0.7rem; color:#999; margin-left:8px;">
@@ -294,6 +308,21 @@
         </div>
         <div>${data.text == undefined ? data : data.text}</div>
       `;
+      if (data.fileurl) {
+        const fileExtension = data.fileurl.split('.').pop().toLowerCase();
+        let fileElement = '';
+        if (['mp4', 'webm', 'ogv', 'avi', 'mov', 'mkv', 'flv', 'wmv'].includes(fileExtension)) {
+          fileElement = `<video controls style="max-width:100%; margin-top:8px;"><source src="${data.fileurl}">Your browser does not support the video tag.</video>`;
+        } else if (['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a', 'wma'].includes(fileExtension)) {
+          fileElement = `<audio controls style="margin-top:8px;"><source src="${data.fileurl}">Your browser does not support the audio tag.</audio>`;
+        } else if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'ico'].includes(fileExtension)) {
+          fileElement = `<img src="${data.fileurl}" alt="Attached image" style="max-width:100%; margin-top:8px;">`;
+        } else {
+          fileElement = `<br /><a href="${data.fileurl}" style="color: #fff;">${data.fileurl}</a>`;
+        }
+        messageHTML += fileElement;
+      }
+      div.innerHTML = messageHTML;
       messagesEl.appendChild(div);
       //messagesEl.scrollTop = messagesEl.scrollHeight;
       intervalId = setInterval(renderMessages, 200);
@@ -302,16 +331,24 @@
     messageForm.addEventListener('submit', async e => {
       e.preventDefault();
       const text = messageInput.value.trim();
-      const message = { from: username, text, time: new Date(), color: color };
+      const file = fileInput.files[0];
+      let fileurl = null;
+      if (file != undefined && file != null) {
+        fileurl = await uploadAsync(host, file.name, file);
+      }
+      const message = { from: username, text, time: new Date(), color: color, fileurl: fileurl };
       if (!text) return;
       let isSuccess = false;
+      const blob = new Blob([JSON.stringify(message)], { type: 'text/plain' });
       for (let i = 0; i < 5; i++) {
-        let messageid = await writeAsync(host, `data.json`, JSON.stringify(message));
+        let messageid = await uploadAsync(host, `data.json`, blob);
         if (messageid != "") { isSuccess = true; break; }
       }
       await renderMessages();
-      if (isSuccess){
+      if (isSuccess) {
         messageInput.value = '';
+        attachBtn.innerHTML = "📎";
+        fileInput.value = "";
       }
     });
 
@@ -345,6 +382,18 @@
 
     usernameModalInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') usernameModalSubmitBtn.click();
+    });
+
+    attachBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files[0];
+      if (file) {
+        attachBtn.title = file.name;
+        attachBtn.innerHTML = "📄";
+      }
     });
   </script>
 </body>
