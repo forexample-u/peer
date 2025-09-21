@@ -1,0 +1,402 @@
+<?php ?>
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Peer chat</title>
+  <style>
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #121212;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #app {
+      flex: 1;
+      display: flex;
+      height: calc(100vh - 50px);
+      border-top: 1px solid #333;
+    }
+
+    #chatPanel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #171717;
+    }
+
+    #chatHeader {
+      padding: 15px 20px;
+      border-bottom: 1px solid #333;
+      font-weight: 600;
+      font-size: 1.2rem;
+      user-select: none;
+      background: #1f1f1f;
+    }
+
+    #messages {
+      flex: 1;
+      padding: 15px 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .message {
+      max-width: 65%;
+      padding: 10px 14px;
+      border-radius: 15px;
+      font-size: 0.9rem;
+      line-height: 1.3;
+      word-wrap: break-word;
+      background: #2a2a2a;
+      color: #ccc;
+      align-self: flex-start;
+    }
+
+    .message.from-me {
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.from-them {
+      border-bottom-left-radius: 4px;
+    }
+
+    @media (max-width: 521px) {
+      .message.from-me {
+        align-self: flex-end;
+      }
+    }
+
+    #messageForm {
+      display: flex;
+      padding: 12px 16px;
+      border-top: 1px solid #333;
+      background: #1f1f1f;
+    }
+
+    #messageForm input[type="text"] {
+      flex: 1;
+      padding: 10px 14px;
+      border-radius: 20px;
+      border: none;
+      outline-offset: 2px;
+      font-size: 1rem;
+      background: #2a2a2a;
+      color: #eee;
+    }
+
+    #messageForm input[type="text"]::placeholder {
+      color: #777;
+    }
+
+    #sendbutton {
+      margin-left: 12px;
+      background: #3a86ff;
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 0 18px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.2s ease;
+    }
+
+    #sendbutton:hover {
+      background: #265ecf;
+    }
+
+    #usernameModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(18, 18, 18, 0.95);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+
+    #usernameModalContent {
+      background: #1f1f1f;
+      padding: 24px 32px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px #3a86ffaa;
+      text-align: center;
+    }
+
+    #usernameModalContent h2 {
+      margin-bottom: 18px;
+      color: #3a86ff;
+    }
+
+    #usernameModalContent input {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1.1rem;
+      outline-offset: 2px;
+      background: #2a2a2a;
+      color: #eee;
+    }
+
+    #usernameModalContent button {
+      margin-top: 16px;
+      background: #3a86ff;
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 10px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      width: 100%;
+      transition: background-color 0.2s ease;
+    }
+
+    #usernameModalContent button:hover {
+      background: #265ecf;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #333;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #555;
+      border-radius: 6px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #777;
+    }
+
+    #attachBtn {
+      background: #2a2a2a;
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      padding: 10px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.2s ease;
+      margin-right: 12px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #attachBtn:hover {
+      background: #36393e;
+    }
+
+    #attachBtn:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="usernameModal" style="display:none;">
+    <div id="usernameModalContent">
+      <h2>Username</h2>
+      <input type="text" id="usernameModalInput" placeholder="John" maxlength="35" />
+      <button id="usernameModalSubmitBtn">Start chat</button>
+    </div>
+  </div>
+  <div id="app">
+    <section id="chatPanel">
+      <div id="chatHeader">Chat</div>
+      <div id="messages"></div>
+      <form id="messageForm" autocomplete="off">
+        <button type="button" id="attachBtn" title="Attach file">📎</button>
+        <input type="text" id="messageInput" placeholder="Write a message..." />
+        <button type="submit" id="sendbutton">Send</button>
+        <input type="file" id="fileInput" style="display:none;" />
+      </form>
+    </section>
+  </div>
+
+  <script>
+    const host = location.origin;
+    const usernameModal = document.getElementById('usernameModal');
+    const usernameModalInput = document.getElementById('usernameModalInput');
+    const usernameModalSubmitBtn = document.getElementById('usernameModalSubmitBtn');
+    const app = document.getElementById('app');
+    const messagesEl = document.getElementById('messages');
+    const messageForm = document.getElementById('messageForm');
+    const attachBtn = document.getElementById('attachBtn');
+    const fileInput = document.getElementById('fileInput');
+    const messageInput = document.getElementById('messageInput');
+    const chatHeader = document.getElementById('chatHeader');
+    const sendBtn = messageForm.querySelector('button');
+
+    let color = localStorage.getItem("color") || "";
+    let username = localStorage.getItem("username") || "null";
+    let dataid = 0;
+    let messages = [];
+    let intervalId = setInterval(renderMessages, 12000);
+
+    function getRandomColor() {
+      const r = Math.floor(Math.random() * 156) + 100;
+      const g = Math.floor(Math.random() * 156) + 100;
+      const b = Math.floor(Math.random() * 156) + 100;
+      const hex = n => n.toString(16).padStart(2, '0');
+      return `#${hex(r)}${hex(g)}${hex(b)}`;
+    }
+
+    async function uploadAsync(url, filename, blob) {
+      const formData = new FormData();
+      formData.append('file', blob, filename);
+      const response = await fetch(`${url}/peer/upload`, { method: 'POST', body: formData });
+      return await response.text();
+    }
+
+    async function getAsync(url, filename) {
+      const response = await fetch(`${url}/peer/${filename}`);
+      if (!response.ok) {
+        return null;
+      }
+      return await response.text();
+    }
+
+    async function renderMessages() {
+      if (color.length == 0) {
+        return;
+      }
+      clearInterval(intervalId);
+      let data = await getAsync(host, `${dataid}_data.json`);
+      if (data == undefined || data == null) {
+        intervalId = setInterval(renderMessages, 12000);
+        return;
+      }
+      try {
+        data = JSON.parse(data);
+      } catch {
+        if (data.trim().startsWith('<html') && data.includes('</noscript>')) {
+          intervalId = setInterval(renderMessages, 12000);
+          return;
+        }
+      }
+      dataid += 1;
+      messages.push(data);
+      const div = document.createElement('div');
+      div.className = 'message ' + (data.from === username && data.color == color ? 'from-me' : 'from-them');
+      let messageHTML = `
+        <div style="font-weight:600; font-size:0.8rem; margin-bottom:4px; color: ${data.color};">
+          ${data.from === username ? username : data.from}
+          <span style="font-weight:400; font-size:0.7rem; color:#999; margin-left:8px;">
+            ${new Date(data.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </div>
+        <div>${data.text == undefined ? data : data.text}</div>
+      `;
+      if (data.fileurl) {
+        const fileExtension = data.fileurl.split('.').pop().toLowerCase();
+        let fileElement = '';
+        if (['mp4', 'webm', 'ogv', 'avi', 'mov', 'mkv', 'flv', 'wmv'].includes(fileExtension)) {
+          fileElement = `<video controls style="max-width:100%; margin-top:8px;"><source src="${data.fileurl}">Your browser does not support the video tag.</video>`;
+        } else if (['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a', 'wma'].includes(fileExtension)) {
+          fileElement = `<audio controls style="margin-top:8px;"><source src="${data.fileurl}">Your browser does not support the audio tag.</audio>`;
+        } else if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'ico'].includes(fileExtension)) {
+          fileElement = `<img src="${data.fileurl}" alt="Attached image" style="max-width:100%; margin-top:8px;">`;
+        } else {
+          fileElement = `<br /><a href="${data.fileurl}" style="color: #fff;">${data.fileurl}</a>`;
+        }
+        messageHTML += fileElement;
+      }
+      div.innerHTML = messageHTML;
+      messagesEl.appendChild(div);
+      //messagesEl.scrollTop = messagesEl.scrollHeight;
+      intervalId = setInterval(renderMessages, 200);
+    }
+
+    messageForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const text = messageInput.value.trim();
+      const file = fileInput.files[0];
+      let fileurl = null;
+      if (file != undefined && file != null) {
+        fileurl = await uploadAsync(host, file.name, file);
+      }
+      const message = { from: username, text, time: new Date(), color: color, fileurl: fileurl };
+      if (!text) return;
+      let isSuccess = false;
+      const blob = new Blob([JSON.stringify(message)], { type: 'text/plain' });
+      for (let i = 0; i < 5; i++) {
+        let messageid = await uploadAsync(host, `data.json`, blob);
+        if (messageid != "") { isSuccess = true; break; }
+      }
+      await renderMessages();
+      if (isSuccess) {
+        messageInput.value = '';
+        attachBtn.innerHTML = "📎";
+        fileInput.value = "";
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', async function () {
+      if (color.length > 0) {
+        chatHeader.innerHTML = username;
+        chatHeader.style.color = color;
+        await renderMessages();
+      }
+      else {
+        app.style = "display:none;";
+        usernameModal.style = '';
+      }
+    });
+
+    usernameModalSubmitBtn.onclick = async () => {
+      username = usernameModalInput.value.trim();
+      color = getRandomColor();
+      if (!username) {
+        usernameModalInput.focus();
+        return;
+      }
+      usernameModal.style.display = 'none';
+      app.style.display = 'flex';
+      localStorage.setItem("username", username);
+      localStorage.setItem("color", color);
+      chatHeader.innerHTML = username;
+      chatHeader.style.color = color;
+      await renderMessages();
+    };
+
+    usernameModalInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') usernameModalSubmitBtn.click();
+    });
+
+    attachBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files[0];
+      if (file) {
+        attachBtn.title = file.name;
+        attachBtn.innerHTML = "📄";
+      }
+    });
+  </script>
+</body>
+
+</html>
