@@ -273,12 +273,13 @@
     async function getAsync(url, filename) {
       try {
         const responsecheck = await fetch(`${url}/peer/check/${filename}`);
-        const text = await responsecheck.text()
-        if (text == "true") {
-          const response = await fetch(`${url}/peer/${filename}`);
-          if (response.ok) {
-            return await response.text();
-          }
+        const text = await responsecheck.text();
+        if (text == "false") {
+          return null;
+        }
+        const response = await fetch(`${url}/peer/${filename}`);
+        if (response.ok) {
+          return await response.text();
         }
       } catch {}
       return null;
