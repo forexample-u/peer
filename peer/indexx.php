@@ -273,18 +273,21 @@
 
     async function getAsync(url, filename) {
       try {
-        const response = await fetch(`${url}/peer/${filename}`);
-        if (!response.ok) {
+        const responsecheck = await fetch(`${url}/peer.php/peer/check/${filename}`);
+        const text = await responsecheck.text()
+        if (text == "false") {
           return null;
         }
-        return await response.text();
-      } catch {
-        return null;
-      }
+        const response = await fetch(`${url}/peer/${filename}`);
+        if (response.ok) {
+          return await response.text();
+        }
+      } catch {}
+      return null;
     }
 
     async function renderMessages() {
-      if (color.length == 0) {
+      if (document.hidden || color.length == 0) {
         return;
       }
       clearInterval(intervalId);

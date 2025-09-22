@@ -49,12 +49,22 @@ switch ($segments[0]) {
         }
         break;
 
+    case 'check':
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            $filename = $uploadFolder . "/" . $segments[1];
+            if (file_exists($filename)) {
+                echo "true";
+            } else {
+                echo "false";
+            }
+        }
+        break;
+
     default:
         $filename = $uploadFolder . "/" . $segments[0];
         if (file_exists($filename)) {
             echo file_get_contents($filename);
-        }
-        else {
+        } else {
             http_response_code(404);
         }
         break;
