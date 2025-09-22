@@ -19,6 +19,7 @@ public class PeerController : ControllerBase
         {
             return "";
         }
+        Directory.CreateDirectory(Path.Combine("wwwroot", "peer"));
         string filename = message.File.FileName ?? "";
         for (int i = 0; ; i++)
         {

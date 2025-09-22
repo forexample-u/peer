@@ -1,4 +1,3 @@
-Directory.CreateDirectory(Path.Combine("wwwroot", "peer"));
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCors(options =>
 {
