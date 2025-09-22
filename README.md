@@ -16,9 +16,10 @@ All endpoints should be free of cors!
 
 ## API Endpoints
 
-Peer includes 2 API endpoints: <br />
+Peer includes 3 API endpoints: <br />
 
 | Method | Endpoint                      | Parameters                 |
 | ------ | ----------------------------- | -------------------------- |
 | POST   | {host}/peer/upload            | file (blob)                |
 | GET    | {host}/peer/{id}              | text (string)              |
+| GET    | {host}/peer/check/{id}        | text (string)              |
