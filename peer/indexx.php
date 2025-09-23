@@ -22,8 +22,19 @@
     #app {
       flex: 1;
       display: flex;
-      height: calc(100vh - 50px);
+      height: 98%;
       border-top: 1px solid #333;
+    }
+
+    #messages {
+      flex: 1;
+      padding: 15px 20px;
+      overflow-y: auto;
+      background: #121212;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 100vw;
     }
 
     #chatPanel {
@@ -42,15 +53,6 @@
       background: #1f1f1f;
     }
 
-    #messages {
-      flex: 1;
-      padding: 15px 20px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
     .message {
       max-width: 65%;
       padding: 10px 14px;
@@ -59,7 +61,7 @@
       line-height: 1.3;
       word-wrap: break-word;
       background: #2a2a2a;
-      color: #ccc;
+      color: #ddd;
       align-self: flex-start;
     }
 
@@ -84,7 +86,7 @@
       background: #1f1f1f;
     }
 
-    #messageForm input[type="text"] {
+    #messageForm textarea[type="text"] {
       flex: 1;
       padding: 10px 14px;
       border-radius: 20px;
@@ -93,9 +95,17 @@
       font-size: 1rem;
       background: #2a2a2a;
       color: #eee;
+      width: 80%;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 1rem;
+      line-height: 1.2;
+      font-weight: 400;
+      height: 18px;
+      resize: none;
+      overflow: hidden;
     }
 
-    #messageForm input[type="text"]::placeholder {
+    #messageForm textarea[type="text"]::placeholder {
       color: #777;
     }
 
@@ -228,7 +238,7 @@
       <div id="messages"></div>
       <form id="messageForm" autocomplete="off">
         <button type="button" id="attachBtn" title="Attach file">📎</button>
-        <input type="text" id="messageInput" placeholder="Write a message..." />
+        <textarea type="text" id="messageInput" placeholder="Write a message..."></textarea>
         <button type="submit" id="sendbutton">Send</button>
         <input type="file" id="fileInput" style="display:none;" />
       </form>
@@ -236,8 +246,7 @@
   </div>
 
   <script>
-    const host = location.origin;
-    const hostupload = location.origin + "/peer.php";
+    const host = location.origin + "/peer.php";
     const usernameModal = document.getElementById('usernameModal');
     const usernameModalInput = document.getElementById('usernameModalInput');
     const usernameModalSubmitBtn = document.getElementById('usernameModalSubmitBtn');
@@ -253,8 +262,8 @@
     let color = localStorage.getItem("color") || "";
     let username = localStorage.getItem("username") || "null";
     let dataid = 0;
-    let messages = [];
-    let intervalId = setInterval(renderMessages, 12000);
+    let intervalId = setInterval(renderMessages, 500);
+    messageInput.value = localStorage.getItem("submitText") || "";
 
     function getRandomColor() {
       const r = Math.floor(Math.random() * 156) + 100;
@@ -273,11 +282,6 @@
 
     async function getAsync(url, filename) {
       try {
-        const responsecheck = await fetch(`${url}/peer.php/peer/check/${filename}`);
-        const text = await responsecheck.text()
-        if (text == "false") {
-          return null;
-        }
         const response = await fetch(`${url}/peer/${filename}`);
         if (response.ok) {
           return await response.text();
@@ -291,73 +295,139 @@
         return;
       }
       clearInterval(intervalId);
-      let data = await getAsync(host, `${dataid}_data.json`);
+      let data = localStorage.getItem(`m${dataid}`);
       if (data == undefined || data == null) {
-        intervalId = setInterval(renderMessages, 12000);
-        return;
-      }
-      try {
-        data = JSON.parse(data);
-      } catch {
-        if (data.trim().startsWith('<html') && data.includes('</noscript>')) {
+        data = await getAsync(host, `${dataid}_data.json`);
+        if (data == undefined || data == null) {
           intervalId = setInterval(renderMessages, 12000);
+          console.clear();
           return;
         }
       }
       dataid += 1;
-      messages.push(data);
+      if (data.trim().startsWith('<html') && data.includes('</noscript>') && data.length > 256) {
+        intervalId = setInterval(renderMessages, 12000);
+        return;
+      }
+      if (data.length <= 512 && dataid < 1200) {
+        localStorage.setItem(`m${dataid - 1}`, data);
+      }
+      if (data.length <= 256 && dataid < 8000) {
+        localStorage.setItem(`m${dataid - 1}`, data);
+      }
+      try {
+        data = JSON.parse(data);
+      } catch {}
       const div = document.createElement('div');
-      div.className = 'message ' + (data.from === username && data.color == color ? 'from-me' : 'from-them');
-      let messageHTML = `
-        <div style="font-weight:600; font-size:0.8rem; margin-bottom:4px; color: ${data.color};">
-          ${data.from === username ? username : data.from}
-          <span style="font-weight:400; font-size:0.7rem; color:#999; margin-left:8px;">
-            ${new Date(data.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        </div>
-        <div>${data.text == undefined ? data : data.text}</div>
-      `;
+      div.id = `m${dataid}`;
+      div.className = 'message ' + (data.from === username && data.color === color ? 'from-me' : 'from-them');
+      const headerDiv = document.createElement('div');
+      headerDiv.style.fontWeight = '600';
+      headerDiv.style.fontSize = '0.8rem';
+      headerDiv.style.marginBottom = '4px';
+      headerDiv.style.color = data.color;
+      headerDiv.textContent = data.from.length > 4096 ? (data.from.slice(0, 4096) + '…') : data.from;
+      headerDiv.style.wordWrap = 'break-word';
+      headerDiv.style.wordBreak = 'break-word';
+      headerDiv.style.overflowWrap = 'break-word';
+      headerDiv.style.whiteSpace = 'normal';
+      headerDiv.style.maxWidth = '100%';
+      const timeSpan = document.createElement('span');
+      timeSpan.style.fontWeight = '400';
+      timeSpan.style.fontSize = '0.7rem';
+      timeSpan.style.color = '#999';
+      timeSpan.style.marginLeft = '8px';
+      timeSpan.textContent = new Date(data.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      headerDiv.appendChild(timeSpan);
+      div.appendChild(headerDiv);
+      if (1 == 1) {
+        const textDiv = document.createElement('div');
+        if (data.text === undefined) {
+          textDiv.textContent = data;
+        } else {
+          textDiv.textContent = data.text;
+        }
+        textDiv.style.wordBreak = 'break-word';
+        textDiv.style.overflowWrap = 'break-word';
+        textDiv.style.maxWidth = '100%';
+        textDiv.style.boxSizing = 'border-box';
+        textDiv.style.whiteSpace = 'pre-wrap';
+        div.appendChild(textDiv);
+      }
+      else { // funny mode
+        div.innerHTML += `<div>${data.text == undefined ? data : data.text}</div>`;
+      }
       if (data.fileurl) {
         const fileExtension = data.fileurl.split('.').pop().toLowerCase();
-        let fileElement = '';
+        let fileElement;
         if (['mp4', 'webm', 'ogv', 'avi', 'mov', 'mkv', 'flv', 'wmv'].includes(fileExtension)) {
-          fileElement = `<video controls style="max-width:100%; margin-top:8px;"><source src="${data.fileurl}">Your browser does not support the video tag.</video>`;
+          fileElement = document.createElement('video');
+          fileElement.controls = true;
+          fileElement.style.maxWidth = '100%';
+          fileElement.style.marginTop = '8px';
+          const source = document.createElement('source');
+          source.src = data.fileurl;
+          fileElement.appendChild(source);
         } else if (['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a', 'wma'].includes(fileExtension)) {
-          fileElement = `<audio controls style="margin-top:8px;"><source src="${data.fileurl}">Your browser does not support the audio tag.</audio>`;
+          fileElement = document.createElement('audio');
+          fileElement.controls = true;
+          fileElement.style.marginTop = '8px';
+          const source = document.createElement('source');
+          source.src = data.fileurl;
+          fileElement.appendChild(source);
         } else if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'ico'].includes(fileExtension)) {
-          fileElement = `<img src="${data.fileurl}" alt="Attached image" style="max-width:100%; margin-top:8px;">`;
+          fileElement = document.createElement('img');
+          fileElement.src = data.fileurl;
+          fileElement.alt = 'Attached image';
+          fileElement.style.maxWidth = '100%';
+          fileElement.style.marginTop = '8px';
         } else {
-          fileElement = `<br /><a href="${data.fileurl}" style="color: #fff;">${data.fileurl}</a>`;
+          fileElement = document.createElement('a');
+          fileElement.href = data.fileurl;
+          fileElement.target = "_blank";
+          fileElement.style.color = '#fff';
+          fileElement.textContent = data.fileurl;
+          fileElement.style.display = 'block';
+          fileElement.style.marginTop = '8px';
+          fileElement.style.maxWidth = '100%';
+          fileElement.style.wordBreak = 'break-word';
+          fileElement.style.overflowWrap = 'break-word';
+          fileElement.style.whiteSpace = 'normal';
         }
-        messageHTML += fileElement;
+        div.appendChild(fileElement);
       }
-      div.innerHTML = messageHTML;
       messagesEl.appendChild(div);
-      //messagesEl.scrollTop = messagesEl.scrollHeight;
-      intervalId = setInterval(renderMessages, 200);
+      intervalId = setInterval(renderMessages, 0);
     }
 
     messageForm.addEventListener('submit', async e => {
       e.preventDefault();
       const text = messageInput.value.trim();
+      localStorage.setItem("submitText", text);
       const file = fileInput.files[0];
       let fileurl = null;
       if (file != undefined && file != null) {
-        fileurl = await uploadAsync(hostupload, file.name, file);
+        fileurl = await uploadAsync(host, file.name, file);
       }
       const message = { from: username, text, time: new Date(), color: color, fileurl: fileurl };
       if (!text) return;
       let isSuccess = false;
       const blob = new Blob([JSON.stringify(message)], { type: 'text/plain' });
       for (let i = 0; i < 5; i++) {
-        let messageid = await uploadAsync(hostupload, `data.json`, blob);
-        if (messageid != "") { isSuccess = true; break; }
+        let messageid = await uploadAsync(host, `data.json`, blob);
+        if (messageid == "" || (messageid.trim().startsWith('<html') && messageid.includes('</noscript>'))) {
+          continue;
+        }
+        isSuccess = true;
+        break;
       }
       await renderMessages();
       if (isSuccess) {
         messageInput.value = '';
         attachBtn.innerHTML = "📎";
         fileInput.value = "";
+        messageInput.style.height = '18px';
+        localStorage.removeItem("submitText");
       }
     });
 
@@ -404,6 +474,13 @@
         attachBtn.innerHTML = "📄";
       }
     });
+
+    const textarea = document.querySelector('#messageForm textarea[type="text"]');
+    textarea.addEventListener('input', autoResize);
+    function autoResize() {
+      this.style.height = 'auto';
+      this.style.height = this.scrollHeight - 40 + 'px';
+    }
   </script>
 </body>
 
