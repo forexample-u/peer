@@ -44,10 +44,4 @@ public class PeerController : ControllerBase
             }
         }
     }
-
-    [HttpGet("check")]
-    public string Check(string filename)
-    {
-        return System.IO.File.Exists(Path.Combine("wwwroot", "peer", filename)) ? "true" : "false";
-    }
 }
