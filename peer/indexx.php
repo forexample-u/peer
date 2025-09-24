@@ -389,7 +389,12 @@
       headerDiv.style.fontSize = '0.8rem';
       headerDiv.style.marginBottom = '4px';
       headerDiv.style.color = data.color;
-      headerDiv.textContent = data.from.length > 4096 ? (data.from.slice(0, 4096) + '…') : data.from;
+      if (data.from == undefined) {
+        headerDiv.textContent = "null";
+      }
+      else {
+         headerDiv.textContent = data.from.length > 4096 ? (data.from.slice(0, 4096) + '…') : data.from;
+      }
       headerDiv.style.wordWrap = 'break-word';
       headerDiv.style.wordBreak = 'break-word';
       headerDiv.style.overflowWrap = 'break-word';
