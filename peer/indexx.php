@@ -6,6 +6,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Peer chat</title>
+  <meta property="og:title" content="Peer free chat">
+  <meta property="og:description" content="free chat">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Peer">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='white'/%3E%3Ctext x='50' y='70' font-size='70' text-anchor='middle' font-family='Arial'%3EP%3C/text%3E%3C/svg%3E" type="image/svg+xml">
   <style>
     body,
     html {
@@ -51,6 +56,64 @@
       font-size: 1.2rem;
       user-select: none;
       background: #1f1f1f;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: white;
+    }
+
+    #menuBtn {
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    #menu {
+      position: absolute;
+      top: 100%;
+      right: 20px;
+      background: #2c2c2c;
+      border: 1px solid #444;
+      border-radius: 4px;
+      margin-top: 5px;
+      min-width: 120px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+
+    #menu.hidden {
+      display: none;
+    }
+
+    #menu ul {
+      list-style: none;
+      margin: 0;
+      padding: 5px 0;
+    }
+
+    #menu li {
+      margin: 0;
+      padding: 0;
+    }
+
+    #menu button {
+      background: transparent;
+      border: none;
+      color: white;
+      width: 100%;
+      padding: 8px 15px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    #menu button:hover {
+      background: #444;
     }
 
     .message {
@@ -309,7 +372,7 @@
         intervalId = setInterval(renderMessages, 12000);
         return;
       }
-      if (data.length <= 512 && dataid < 1200) {
+      if (data.length <= 512 && dataid < 800) {
         localStorage.setItem(`m${dataid - 1}`, data);
       }
       if (data.length <= 256 && dataid < 8000) {
@@ -345,7 +408,21 @@
         if (data.text === undefined) {
           textDiv.textContent = data;
         } else {
-          textDiv.textContent = data.text;
+          const text = data.text;
+          const urlRegex = /(https?:\/\/[^\s]+)/g;
+          const parts = text.split(urlRegex);
+          parts.forEach(part => {
+            if (urlRegex.test(part)) {
+              const link = document.createElement('a');
+              link.href = part;
+              link.style.color = "#fff";
+              link.textContent = part;
+              link.target = '_blank';
+              textDiv.appendChild(link);
+            } else {
+              textDiv.appendChild(document.createTextNode(part));
+            }
+          });
         }
         textDiv.style.wordBreak = 'break-word';
         textDiv.style.overflowWrap = 'break-word';
@@ -354,7 +431,7 @@
         textDiv.style.whiteSpace = 'pre-wrap';
         div.appendChild(textDiv);
       }
-      else { // funny mode
+      else {
         div.innerHTML += `<div>${data.text == undefined ? data : data.text}</div>`;
       }
       if (data.fileurl) {
@@ -397,6 +474,11 @@
         div.appendChild(fileElement);
       }
       messagesEl.appendChild(div);
+      const threshold = 130 + div.clientHeight;
+      const isNearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < threshold;
+      if (isNearBottom && dataid > 16) {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
       intervalId = setInterval(renderMessages, 0);
     }
 
@@ -434,6 +516,13 @@
     document.addEventListener('DOMContentLoaded', async function () {
       if (color.length > 0) {
         chatHeader.innerHTML = username;
+        chatHeader.innerHTML += `<button id="menuBtn" onclick="toggleMenu()" title="Menu" aria-label="Menu">&#9776;</button>
+        <div id="menu" class="hidden">
+          <ul>
+            <li><button onclick="window.open('https://github.com/forexample-u/peer', '_blank')">Github</button></li>
+            <li><button id="option2">Смена обой</button></li>
+          </ul>
+        </div>`
         chatHeader.style.color = color;
         await renderMessages();
       }
@@ -442,6 +531,15 @@
         usernameModal.style = '';
       }
     });
+
+    function toggleMenu() {
+      const menu = document.getElementById('menu');
+      if (menu.classList.contains('hidden')) {
+        menu.classList.remove('hidden');
+      } else {
+        menu.classList.add('hidden');
+      }
+    }
 
     usernameModalSubmitBtn.onclick = async () => {
       username = usernameModalInput.value.trim();
