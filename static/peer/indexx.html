@@ -388,7 +388,12 @@
       headerDiv.style.fontSize = '0.8rem';
       headerDiv.style.marginBottom = '4px';
       headerDiv.style.color = data.color;
-      headerDiv.textContent = data.from.length > 4096 ? (data.from.slice(0, 4096) + '…') : data.from;
+      if (data.from == undefined) {
+        headerDiv.textContent = "null";
+      }
+      else {
+         headerDiv.textContent = data.from.length > 4096 ? (data.from.slice(0, 4096) + '…') : data.from;
+      }
       headerDiv.style.wordWrap = 'break-word';
       headerDiv.style.wordBreak = 'break-word';
       headerDiv.style.overflowWrap = 'break-word';
@@ -409,19 +414,21 @@
         } else {
           const text = data.text;
           const urlRegex = /(https?:\/\/[^\s]+)/g;
-          const parts = text.split(urlRegex);
-          parts.forEach(part => {
-            if (urlRegex.test(part)) {
-              const link = document.createElement('a');
-              link.href = part;
-              link.style.color = "#fff";
-              link.textContent = part;
-              link.target = '_blank';
-              textDiv.appendChild(link);
-            } else {
-              textDiv.appendChild(document.createTextNode(part));
-            }
-          });
+          if (text !== undefined) {
+            const parts = text.split(urlRegex);
+            parts.forEach(part => {
+              if (urlRegex.test(part)) {
+                const link = document.createElement('a');
+                link.href = part;
+                link.style.color = "#fff";
+                link.textContent = part;
+                link.target = '_blank';
+                textDiv.appendChild(link);
+              } else {
+                textDiv.appendChild(document.createTextNode(part));
+              }
+            });
+          }
         }
         textDiv.style.wordBreak = 'break-word';
         textDiv.style.overflowWrap = 'break-word';
