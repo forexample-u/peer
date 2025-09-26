@@ -526,10 +526,11 @@
       }
     });
 
-    messageInput.addEventListener('input', () => {
+    messageInput.addEventListener('input', autoResize);
+    function autoResize() {
       this.style.height = 'auto';
       this.style.height = this.scrollHeight - 40 + 'px';
-    });
+    };
   </script>
 </body>
 
