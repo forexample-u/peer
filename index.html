@@ -95,11 +95,6 @@
       padding: 5px 0;
     }
 
-    #menu li {
-      margin: 0;
-      padding: 0;
-    }
-
     #menu button {
       background: transparent;
       border: none;
@@ -290,16 +285,25 @@
   <div id="usernameModal" style="display:none;">
     <div id="usernameModalContent">
       <h2>Username</h2>
-      <input type="text" id="usernameModalInput" placeholder="John" maxlength="35" />
+      <input type="text" id="usernameModalInput" placeholder="user" maxlength="35" />
       <button id="usernameModalSubmitBtn">Start chat</button>
     </div>
   </div>
   <div id="app">
     <section id="chatPanel">
-      <div id="chatHeader">Chat</div>
+      <div id="chatHeader">
+        <button id="menuBtn" onclick="document.getElementById('menu').classList.toggle('hidden');" title="Menu" aria-label="Menu">&#9776;</button>
+        <div id="menu" class="hidden">
+          <ul>
+            <li><button onclick="window.open('https://github.com/forexample-u/peer', '_blank')">Github</button></li>
+            <li><button id="option2">Change wallpaper</button></li>
+            <li><button onclick="localStorage.removeItem('username'); localStorage.removeItem('color'); location.reload();">Change username</button></li>
+          </ul>
+        </div>
+      </div>
       <div id="messages"></div>
       <form id="messageForm" autocomplete="off">
-        <button type="button" id="attachBtn" title="Attach file">📎</button>
+        <button type="button" id="attachBtn" onclick="fileInput.click();" title="Attach file">📎</button>
         <textarea type="text" id="messageInput" placeholder="Write a message..."></textarea>
         <button type="submit" id="sendbutton">Send</button>
         <input type="file" id="fileInput" style="display:none;" />
@@ -326,14 +330,6 @@
     let dataid = 0;
     let intervalId = setInterval(renderMessages, 500);
     messageInput.value = localStorage.getItem("submitText") || "";
-
-    function getRandomColor() {
-      const r = Math.floor(Math.random() * 156) + 100;
-      const g = Math.floor(Math.random() * 156) + 100;
-      const b = Math.floor(Math.random() * 156) + 100;
-      const hex = n => n.toString(16).padStart(2, '0');
-      return `#${hex(r)}${hex(g)}${hex(b)}`;
-    }
 
     async function uploadAsync(url, filename, blob) {
       const formData = new FormData();
@@ -371,15 +367,10 @@
         intervalId = setInterval(renderMessages, 12000);
         return;
       }
-      if (data.length <= 512 && dataid < 800) {
+      if (data.length <= 256 && dataid < 8000 || data.length <= 512 && dataid < 800) {
         localStorage.setItem(`m${dataid - 1}`, data);
       }
-      if (data.length <= 256 && dataid < 8000) {
-        localStorage.setItem(`m${dataid - 1}`, data);
-      }
-      try {
-        data = JSON.parse(data);
-      } catch {}
+      try { data = JSON.parse(data); } catch {}
       const div = document.createElement('div');
       div.id = `m${dataid}`;
       div.className = 'message ' + (data.from === username && data.color === color ? 'from-me' : 'from-them');
@@ -388,62 +379,45 @@
       headerDiv.style.fontSize = '0.8rem';
       headerDiv.style.marginBottom = '4px';
       headerDiv.style.color = data.color;
-      if (data.from == undefined) {
-        headerDiv.textContent = "null";
-      }
-      else {
-         headerDiv.textContent = data.from.length > 4096 ? (data.from.slice(0, 4096) + '…') : data.from;
-      }
       headerDiv.style.wordWrap = 'break-word';
-      headerDiv.style.wordBreak = 'break-word';
       headerDiv.style.overflowWrap = 'break-word';
-      headerDiv.style.whiteSpace = 'normal';
       headerDiv.style.maxWidth = '100%';
+      headerDiv.style.whiteSpace = 'normal';
+      headerDiv.style.wordBreak = 'break-word';
+      headerDiv.textContent = data.from ? (data.from.length > 4096 ? (data.from.slice(0, 4096) + '…') : data.from) : "null";
       const timeSpan = document.createElement('span');
       timeSpan.style.fontWeight = '400';
       timeSpan.style.fontSize = '0.7rem';
       timeSpan.style.color = '#999';
       timeSpan.style.marginLeft = '8px';
       timeSpan.textContent = new Date(data.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const textDiv = document.createElement('div');
+      textDiv.style.wordBreak = 'break-word';
+      textDiv.style.overflowWrap = 'break-word';
+      textDiv.style.maxWidth = '100%';
+      textDiv.style.whiteSpace = 'pre-wrap';
+      textDiv.style.boxSizing = 'border-box';
+      const text = data.text === undefined ? data : data.text;
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      text.split(urlRegex).forEach(part => {
+        if (urlRegex.test(part)) {
+          const link = document.createElement('a');
+          link.href = part;
+          link.style.color = "#fff";
+          link.textContent = part;
+          link.target = '_blank';
+          textDiv.appendChild(link);
+        } else {
+          textDiv.appendChild(document.createTextNode(part));
+        }
+      });
       headerDiv.appendChild(timeSpan);
       div.appendChild(headerDiv);
-      if (1 == 1) {
-        const textDiv = document.createElement('div');
-        if (data.text === undefined) {
-          textDiv.textContent = data;
-        } else {
-          const text = data.text;
-          const urlRegex = /(https?:\/\/[^\s]+)/g;
-          if (text !== undefined) {
-            const parts = text.split(urlRegex);
-            parts.forEach(part => {
-              if (urlRegex.test(part)) {
-                const link = document.createElement('a');
-                link.href = part;
-                link.style.color = "#fff";
-                link.textContent = part;
-                link.target = '_blank';
-                textDiv.appendChild(link);
-              } else {
-                textDiv.appendChild(document.createTextNode(part));
-              }
-            });
-          }
-        }
-        textDiv.style.wordBreak = 'break-word';
-        textDiv.style.overflowWrap = 'break-word';
-        textDiv.style.maxWidth = '100%';
-        textDiv.style.boxSizing = 'border-box';
-        textDiv.style.whiteSpace = 'pre-wrap';
-        div.appendChild(textDiv);
-      }
-      else {
-        div.innerHTML += `<div>${data.text == undefined ? data : data.text}</div>`;
-      }
+      div.appendChild(textDiv);
       if (data.fileurl) {
-        const fileExtension = data.fileurl.split('.').pop().toLowerCase();
+        const ext = data.fileurl.split('.').pop().toLowerCase();
         let fileElement;
-        if (['mp4', 'webm', 'ogv', 'avi', 'mov', 'mkv', 'flv', 'wmv'].includes(fileExtension)) {
+        if (['mp4', 'webm', 'ogv', 'avi', 'mov', 'mkv', 'flv', 'wmv'].includes(ext)) {
           fileElement = document.createElement('video');
           fileElement.controls = true;
           fileElement.style.maxWidth = '100%';
@@ -451,14 +425,14 @@
           const source = document.createElement('source');
           source.src = data.fileurl;
           fileElement.appendChild(source);
-        } else if (['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a', 'wma'].includes(fileExtension)) {
+        } else if (['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a', 'wma'].includes(ext)) {
           fileElement = document.createElement('audio');
           fileElement.controls = true;
           fileElement.style.marginTop = '8px';
           const source = document.createElement('source');
           source.src = data.fileurl;
           fileElement.appendChild(source);
-        } else if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'ico'].includes(fileExtension)) {
+        } else if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'ico'].includes(ext)) {
           fileElement = document.createElement('img');
           fileElement.src = data.fileurl;
           fileElement.alt = 'Attached image';
@@ -490,45 +464,31 @@
 
     messageForm.addEventListener('submit', async e => {
       e.preventDefault();
+      const file = fileInput.files[0];
       const text = messageInput.value.trim();
       localStorage.setItem("submitText", text);
-      const file = fileInput.files[0];
-      let fileurl = null;
-      if (file != undefined && file != null) {
-        fileurl = await uploadAsync(host, file.name, file);
-      }
-      const message = { from: username, text, time: new Date(), color: color, fileurl: fileurl };
       if (!text) return;
-      let isSuccess = false;
+      const fileurl = file ? (await uploadAsync(host, file.name, file)) : null;
+      const message = { from: username, text, time: new Date(), color: color, fileurl: fileurl };
       const blob = new Blob([JSON.stringify(message)], { type: 'text/plain' });
       for (let i = 0; i < 5; i++) {
         let messageid = await uploadAsync(host, `data.json`, blob);
         if (messageid == "" || (messageid.trim().startsWith('<html') && messageid.includes('</noscript>'))) {
           continue;
         }
-        isSuccess = true;
+        messageInput.value = "";
+        messageInput.style.height = '18px';
+        attachBtn.innerHTML = "📎";
+        fileInput.value = "";
+        localStorage.removeItem("submitText");
         break;
       }
       await renderMessages();
-      if (isSuccess) {
-        messageInput.value = '';
-        attachBtn.innerHTML = "📎";
-        fileInput.value = "";
-        messageInput.style.height = '18px';
-        localStorage.removeItem("submitText");
-      }
     });
 
-    document.addEventListener('DOMContentLoaded', async function () {
+    document.addEventListener('DOMContentLoaded', async () => {
       if (color.length > 0) {
-        chatHeader.innerHTML = username;
-        chatHeader.innerHTML += `<button id="menuBtn" onclick="toggleMenu()" title="Menu" aria-label="Menu">&#9776;</button>
-        <div id="menu" class="hidden">
-          <ul>
-            <li><button onclick="window.open('https://github.com/forexample-u/peer', '_blank')">Github</button></li>
-            <li><button id="option2">Смена обой</button></li>
-          </ul>
-        </div>`
+        chatHeader.innerHTML = username + chatHeader.innerHTML;
         chatHeader.style.color = color;
         await renderMessages();
       }
@@ -538,37 +498,24 @@
       }
     });
 
-    function toggleMenu() {
-      const menu = document.getElementById('menu');
-      if (menu.classList.contains('hidden')) {
-        menu.classList.remove('hidden');
-      } else {
-        menu.classList.add('hidden');
-      }
-    }
-
     usernameModalSubmitBtn.onclick = async () => {
-      username = usernameModalInput.value.trim();
-      color = getRandomColor();
-      if (!username) {
-        usernameModalInput.focus();
-        return;
-      }
+      const r = Math.floor(Math.random() * 156) + 100;
+      const g = Math.floor(Math.random() * 156) + 100;
+      const b = Math.floor(Math.random() * 156) + 100;
+      const hex = n => n.toString(16).padStart(2, '0');
+      color = `#${hex(r)}${hex(g)}${hex(b)}`;
+      username = usernameModalInput.value.trim() || ("user" + (28 + Math.floor(Math.random() * 50) * 2));
       usernameModal.style.display = 'none';
       app.style.display = 'flex';
       localStorage.setItem("username", username);
       localStorage.setItem("color", color);
-      chatHeader.innerHTML = username;
+      chatHeader.innerHTML = username + chatHeader.innerHTML;
       chatHeader.style.color = color;
       await renderMessages();
     };
 
     usernameModalInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') usernameModalSubmitBtn.click();
-    });
-
-    attachBtn.addEventListener('click', () => {
-      fileInput.click();
     });
 
     fileInput.addEventListener('change', async () => {
@@ -579,12 +526,10 @@
       }
     });
 
-    const textarea = document.querySelector('#messageForm textarea[type="text"]');
-    textarea.addEventListener('input', autoResize);
-    function autoResize() {
+    messageInput.addEventListener('input', () => {
       this.style.height = 'auto';
       this.style.height = this.scrollHeight - 40 + 'px';
-    }
+    });
   </script>
 </body>
 
