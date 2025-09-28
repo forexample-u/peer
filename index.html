@@ -33,6 +33,7 @@
     }
 
     #messages {
+      flex: 1;
       padding: 15px 20px;
       overflow-y: auto;
       background: #121212;
@@ -294,24 +295,19 @@
     async function getAsync(url, filename) {
       try {
         const response = await fetch(`${url}/peer/${filename}`);
-        if (response.ok) {
-          return await response.text();
-        }
-      } catch {}
-      return null;
+        return response.ok ? (await response.text()) : null;
+      } catch { return null; }
     }
 
     async function renderMessages() {
-      if (document.hidden || color.length == 0) {
-        return;
-      }
+      if (document.hidden || !color) { return; }
       clearInterval(intervalId);
       let data = localStorage.getItem(`m${dataid}`);
       if (data == undefined || data == null) {
         data = await getAsync(host, `${dataid}_data.json`);
         if (data == undefined || data == null) {
           intervalId = setInterval(renderMessages, 12000);
-          console.clear();
+          if (Math.random() < 0.1) { console.clear(); }
           return;
         }
       }
@@ -350,9 +346,8 @@
       textDiv.style.maxWidth = '100%';
       textDiv.style.whiteSpace = 'pre-wrap';
       textDiv.style.boxSizing = 'border-box';
-      const text = data.text === undefined ? data : data.text;
       const urlRegex = /(https?:\/\/[^\s]+)/g;
-      text.split(urlRegex).forEach(part => {
+      (data.text || data).split(urlRegex).forEach(part => {
         if (urlRegex.test(part)) {
           const link = document.createElement('a');
           link.href = part;
@@ -403,8 +398,7 @@
         div.appendChild(fileElement);
       }
       messagesEl.appendChild(div);
-      const threshold = 130 + div.clientHeight;
-      const isNearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < threshold;
+      const isNearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 130 + div.clientHeight;
       if (isNearBottom && dataid > 16) {
         messagesEl.scrollTop = messagesEl.scrollHeight;
       }
@@ -416,12 +410,12 @@
       const file = fileInput.files[0];
       const text = messageInput.value.trim();
       localStorage.setItem("submitText", text);
-      if (!text) return;
+      if (!text) { return; }
       const fileurl = file ? (await uploadAsync(host, file.name, file)) : null;
       const message = { from: username, text, time: new Date(), color: color, fileurl: fileurl };
       const blob = new Blob([JSON.stringify(message)], { type: 'text/plain' });
       for (let i = 0; i < 5; i++) {
-        let messageid = await uploadAsync(host, `data.json`, blob);
+        let messageid = await uploadAsync(host, 'data.json', blob);
         if (messageid == "" || (messageid.trim().startsWith('<html') && messageid.includes('</noscript>'))) {
           continue;
         }
@@ -440,8 +434,7 @@
         chatHeader.innerHTML = username + chatHeader.innerHTML;
         chatHeader.style.color = color;
         await renderMessages();
-      }
-      else {
+      } else {
         app.style.display = "none";
         usernameModal.style = '';
       }
@@ -464,7 +457,7 @@
     };
 
     usernameModalInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') usernameModalSubmitBtn.click();
+      if (e.key === 'Enter') { usernameModalSubmitBtn.click(); }
     });
 
     fileInput.addEventListener('change', () => {
@@ -472,12 +465,10 @@
       attachBtn.innerHTML = "📄";
     });
 
-    messageInput.addEventListener('input', autoResize);
-    function autoResize() {
+    messageInput.addEventListener('input', function() {
       this.style.height = 'auto';
       this.style.height = this.scrollHeight - 40 + 'px';
-    };
+    });
   </script>
 </body>
-
 </html>
