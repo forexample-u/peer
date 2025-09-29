@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -73,11 +72,7 @@
       border-radius: 4px;
       margin-top: 5px;
       min-width: 120px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-    }
-
-    #menu.hidden {
-      display: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
     #menu ul {
@@ -205,7 +200,7 @@
       background: #2a2a2a;
       box-sizing: border-box;
     }
-
+    
     #usernameModalContent button {
       margin-top: 16px;
       background: #3a86ff;
@@ -248,8 +243,8 @@
   </div>
   <div id="app">
     <div id="chatHeader">
-      <button id="menuBtn" onclick="document.getElementById('menu').classList.toggle('hidden');" title="Menu" aria-label="Menu">&#9776;</button>
-      <div id="menu" class="hidden">
+      <button id="menuBtn" onclick="document.getElementById('menu').style.display = document.getElementById('menu').style.display == 'none' ? '' : 'none';" title="Menu" aria-label="Menu">&#9776;</button>
+      <div id="menu">
         <ul>
           <li><button onclick="window.open('https://github.com/forexample-u/peer', '_blank')">Github</button></li>
           <li><button id="option2">Change wallpaper</button></li>
@@ -319,7 +314,7 @@
       if (data.length <= 256 && dataid < 8000 || data.length <= 512 && dataid < 800) {
         localStorage.setItem(`m${dataid - 1}`, data);
       }
-      try { data = JSON.parse(data); } catch {}
+      try { data = JSON.parse(data); } catch { }
       const div = document.createElement('div');
       div.id = `m${dataid}`;
       div.className = 'message ' + (data.from === username && data.color === color ? 'from-me' : 'from-them');
@@ -352,7 +347,6 @@
           const link = document.createElement('a');
           link.href = part;
           link.target = '_blank';
-          link.style.color = "#fff";
           link.textContent = part;
           textDiv.appendChild(link);
         } else {
@@ -367,7 +361,6 @@
         let fileElement;
         if (['mp4', 'webm', 'ogv', 'avi', 'mov', 'mkv', 'flv', 'wmv'].includes(ext)) {
           fileElement = document.createElement('video');
-          fileElement.style.maxWidth = '100%';
           fileElement.controls = true;
           const source = document.createElement('source');
           source.src = data.fileurl;
@@ -381,25 +374,22 @@
         } else if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'ico'].includes(ext)) {
           fileElement = document.createElement('img');
           fileElement.src = data.fileurl;
-          fileElement.alt = 'Attached image';
-          fileElement.style.maxWidth = '100%';
         } else {
           fileElement = document.createElement('a');
           fileElement.href = data.fileurl;
           fileElement.target = "_blank";
           fileElement.textContent = data.fileurl;
           fileElement.style.display = 'block';
-          fileElement.style.maxWidth = '100%';
           fileElement.style.wordBreak = 'break-word';
           fileElement.style.overflowWrap = 'break-word';
           fileElement.style.whiteSpace = 'normal';
         }
         fileElement.style.marginTop = '8px';
+        fileElement.style.maxWidth = '100%';
         div.appendChild(fileElement);
       }
       messagesEl.appendChild(div);
-      const isNearBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 130 + div.clientHeight;
-      if (isNearBottom && dataid > 16) {
+      if (dataid > 16 && messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 100 + div.clientHeight) {
         messagesEl.scrollTop = messagesEl.scrollHeight;
       }
       intervalId = setInterval(renderMessages, 0);
@@ -407,26 +397,23 @@
 
     messageForm.addEventListener('submit', async e => {
       e.preventDefault();
-      const file = fileInput.files[0];
       const text = messageInput.value.trim();
       localStorage.setItem("submitText", text);
       if (!text) { return; }
+      const file = fileInput.files[0];
       const fileurl = file ? (await uploadAsync(host, file.name, file)) : null;
       const message = { from: username, text, time: new Date(), color: color, fileurl: fileurl };
       const blob = new Blob([JSON.stringify(message)], { type: 'text/plain' });
-      for (let i = 0; i < 5; i++) {
-        let messageid = await uploadAsync(host, 'data.json', blob);
-        if (messageid == "" || (messageid.trim().startsWith('<html') && messageid.includes('</noscript>'))) {
-          continue;
-        }
-        messageInput.value = "";
-        messageInput.style.height = '18px';
-        attachBtn.innerHTML = "📎";
-        fileInput.value = "";
-        localStorage.removeItem("submitText");
-        break;
-      }
+      const messageid = await uploadAsync(host, 'data.json', blob);
       await renderMessages();
+      if (messageid == "" || (messageid.trim().startsWith('<html') && messageid.includes('</noscript>'))) {
+        return;
+      }
+      messageInput.value = "";
+      messageInput.style.height = '18px';
+      attachBtn.innerHTML = "📎";
+      fileInput.value = "";
+      localStorage.removeItem("submitText");
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -440,7 +427,7 @@
       }
     });
 
-    usernameModalSubmitBtn.onclick = async () => {
+    usernameModalSubmitBtn.addEventListener('click', async () => {
       const r = Math.floor(Math.random() * 156) + 100;
       const g = Math.floor(Math.random() * 156) + 100;
       const b = Math.floor(Math.random() * 156) + 100;
@@ -454,7 +441,7 @@
       chatHeader.innerHTML = username + chatHeader.innerHTML;
       chatHeader.style.color = color;
       await renderMessages();
-    };
+    });
 
     usernameModalInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') { usernameModalSubmitBtn.click(); }
@@ -465,7 +452,7 @@
       attachBtn.innerHTML = "📄";
     });
 
-    messageInput.addEventListener('input', function() {
+    messageInput.addEventListener('input', function () {
       this.style.height = 'auto';
       this.style.height = this.scrollHeight - 40 + 'px';
     });
