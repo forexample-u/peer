@@ -64,6 +64,9 @@
     }
 
     #menu {
+      list-style: none;
+      margin: 0;
+      padding: 5px 0;
       position: absolute;
       top: 100%;
       right: 20px;
@@ -75,17 +78,11 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
-    #menu ul {
-      list-style: none;
-      margin: 0;
-      padding: 5px 0;
-    }
-
     #menu button {
       background: transparent;
       border: none;
       width: 100%;
-      padding: 8px 15px;
+      padding: 8px 16px;
       text-align: left;
       cursor: pointer;
       font-size: 1rem;
@@ -186,11 +183,6 @@
       text-align: center;
     }
 
-    #usernameModalContent h2 {
-      margin-bottom: 18px;
-      color: #3a86ff;
-    }
-
     #usernameModalContent input {
       width: 100%;
       padding: 10px 14px;
@@ -236,7 +228,7 @@
 <body>
   <div id="usernameModal" style="display:none;">
     <div id="usernameModalContent">
-      <h2>Username</h2>
+      <h2 style="color: #3a86ff;">Username</h2>
       <input type="text" id="usernameModalInput" placeholder="user" maxlength="35" />
       <button id="usernameModalSubmitBtn">Start chat</button>
     </div>
@@ -244,13 +236,11 @@
   <div id="app">
     <div id="chatHeader">
       <button id="menuBtn" onclick="document.getElementById('menu').style.display = document.getElementById('menu').style.display == 'none' ? '' : 'none';" title="Menu" aria-label="Menu">&#9776;</button>
-      <div id="menu" style="display: none;">
-        <ul>
-          <li><button onclick="window.open('https://github.com/forexample-u/peer', '_blank')">Github</button></li>
-          <li><button id="option2">Change wallpaper</button></li>
-          <li><button onclick="localStorage.removeItem('username'); localStorage.removeItem('color'); location.reload();">Change username</button></li>
-        </ul>
-      </div>
+      <ul id="menu" style="display:none;">
+        <li><button onclick="window.open('https://github.com/forexample-u/peer', '_blank')">Github</button></li>
+        <li><button id="option2">Change wallpaper</button></li>
+        <li><button onclick="localStorage.removeItem('username'); localStorage.removeItem('color'); location.reload();">Change username</button></li>
+      </ul>
     </div>
     <div id="messages"></div>
     <form id="messageForm" autocomplete="off">
@@ -278,7 +268,6 @@
     let username = localStorage.getItem("username") || "null";
     let dataid = 0;
     let intervalId = setInterval(renderMessages, 500);
-    messageInput.value = localStorage.getItem("submitText") || "";
 
     async function uploadAsync(url, filename, blob) {
       const formData = new FormData();
@@ -301,14 +290,14 @@
       if (data == undefined || data == null) {
         data = await getAsync(host, `${dataid}_data.json`);
         if (data == undefined || data == null) {
-          intervalId = setInterval(renderMessages, 12000);
+          intervalId = setInterval(renderMessages, 14000);
           if (Math.random() < 0.1) { console.clear(); }
           return;
         }
       }
       dataid += 1;
       if (data.trim().startsWith('<html') && data.includes('</noscript>') && data.length > 256) {
-        intervalId = setInterval(renderMessages, 12000);
+        intervalId = setInterval(renderMessages, 14000);
         return;
       }
       if (data.length <= 256 && dataid < 8000 || data.length <= 512 && dataid < 800) {
@@ -405,10 +394,10 @@
       const message = { from: username, text, time: new Date(), color: color, fileurl: fileurl };
       const blob = new Blob([JSON.stringify(message)], { type: 'text/plain' });
       const messageid = await uploadAsync(host, 'data.json', blob);
-      await renderMessages();
       if (messageid == "" || (messageid.trim().startsWith('<html') && messageid.includes('</noscript>'))) {
         return;
       }
+      await renderMessages();
       messageInput.value = "";
       messageInput.style.height = '18px';
       attachBtn.innerHTML = "📎";
@@ -417,6 +406,7 @@
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
+      messageInput.value = localStorage.getItem("submitText") || "";
       if (color) {
         chatHeader.innerHTML = username + chatHeader.innerHTML;
         chatHeader.style.color = color;
@@ -441,10 +431,6 @@
       chatHeader.innerHTML = username + chatHeader.innerHTML;
       chatHeader.style.color = color;
       await renderMessages();
-    });
-
-    usernameModalInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { usernameModalSubmitBtn.click(); }
     });
 
     fileInput.addEventListener('change', () => {
