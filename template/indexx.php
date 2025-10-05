@@ -1,0 +1,110 @@
+<?php ?>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Peer private chat</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='white'/%3E%3Ctext x='50' y='70' font-size='70' text-anchor='middle' font-family='Arial'%3EP%3C/text%3E%3C/svg%3E" type="image/svg+xml">
+  <style>
+    .message {
+      padding: 16px;
+      background: #2b2b2b;
+      border-radius: 20px;
+      align-self: flex-start;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI';
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    #messages {
+      padding: 15px;
+      background: #121212;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex-grow: 1;
+    }
+    #uploadForm {
+      background: #1e1e1e;
+      display: flex;
+      padding: 15px;
+      gap: 10px;
+    }
+    #fileInput {
+      padding: 10px;
+      flex-grow: 1;
+      border: 2px dashed#555;
+      text-align: center;
+      color: #aaa;
+      cursor: pointer;
+    }
+    button {
+      padding: 10px 20px;
+      background: #667eea;
+      border-radius: 20px;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+    }
+    audio, video, img {
+      max-width: 100%;
+      margin-bottom: 6px;
+    }
+    a {
+      display: block;
+      color: #fff;
+      word-break: break-all
+    }
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #555;
+      border-radius: 6px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #777;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="messages"></div>
+  <form id="uploadForm">
+    <input type="file" id="fileInput" />
+    <button type="submit">Send</button>
+  </form>
+  <script>
+    const host = location.origin + "/peer.php";
+    function addMsg(url) {
+      const ext = url.split('.').pop().toLowerCase();
+      const msg = document.createElement('div');
+      if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) msg.innerHTML = '<img src="' + url + '" />';
+      if (['mp4', 'mov'].includes(ext)) msg.innerHTML = '<video controls><source src="' + url + '"></source></video>';
+      if (['mp3', 'wav'].includes(ext)) msg.innerHTML = '<audio controls><source src="' + url + '"></source></audio>';
+      msg.className = 'message';
+      msg.innerHTML += '<a target="_blank" href="' + url + '">' + url + '</a>';
+      document.getElementById('messages').appendChild(msg);
+    }
+    let links = JSON.parse(localStorage.getItem('files') || '[]');
+    links.forEach(({ url }) => addMsg(url));
+    document.getElementById('uploadForm').onsubmit = async e => {
+      e.preventDefault();
+      const fileInput = document.getElementById('fileInput');
+      const fd = new FormData(); fd.append('file', fileInput.files[0]);
+      const url = await (await fetch(host + '/peer/upload', { method: 'POST', body: fd })).text();
+      if (url) {
+        fileInput.value = '';
+        addMsg(url);
+        links.push({ url });
+        localStorage.setItem('files', JSON.stringify(links));
+      }
+    };
+    </script>
+</body>
+</html>
