@@ -37,10 +37,25 @@ if ($segments[1] === "upload" && $_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
         }
     }
+} elseif ($segments[1] === "index") {
+    echo '<!DOCTYPE html><html><head><style>body { background:#121212; } input, a { font-size:45px; display:block; color:#fff; }</style>
+</head><body><input type="file" id="in" onchange="upload();" /><script>
+async function upload() {
+  const fd = new FormData(); fd.append("file", document.getElementById("in").files[0]);
+  const url = await (await fetch("http://localhost:9050/peer.php/peer/upload", { method: "POST", body: fd })).text();
+  document.body.innerHTML += "<a target=\"_blank\" href=\"" + url + "\">" + url + "</a>";
+}</script></body></html>';
 } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $filepath = $uploadFolder . DIRECTORY_SEPARATOR . urldecode($segments[1]);
     if (file_exists($filepath)) {
-        header('Content-Type: ' . mime_content_type(urldecode($segments[1])));
+        if (function_exists('mime_content_type')) {
+            header('Content-Type: ' . mime_content_type(urldecode($segments[1])));
+        } else {
+            $mimeTypes = ['txt'=>'text/plain', 'json'=>'application/json', 'xml'=>'application/xml', 'pdf'=>'application/pdf', 'zip'=>'application/zip', 'html'=>'text/html', 'php'=>'application/x-php',
+                          'jpg'=>'image/jpeg', 'jpeg'=>'image/jpeg', 'png'=>'image/png', 'gif'=>'image/gif', 'svg'=>'image/svg+xml', 'mp4'=>'video/mp4', 'mp3'=>'audio/mpeg', 'wav'=>'audio/wav'];
+            $extension = strtolower(pathinfo($filepath, PATHINFO_EXTENSION));
+            header('Content-Type: ' . (isset($mimeTypes[$extension]) ? $mimeTypes[$extension] : "application/octet-stream"));
+        }
         echo file_get_contents($filepath);
     } else {
         http_response_code(404);
