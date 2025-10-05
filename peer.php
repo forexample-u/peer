@@ -42,7 +42,7 @@ if ($segments[1] === "upload" && $_SERVER['REQUEST_METHOD'] === 'POST') {
           </style></head><body><input type="file" id="in" onchange="upload();" />
           <script>async function upload() {
             const fd = new FormData(); fd.append("file", document.getElementById("in").files[0]);
-            const url = await (await fetch(location.origin + "/peer.php/peer/upload", { method: "POST", body: fd })).text();
+            const url = (await (await fetch(location.origin + "/peer.php/peer/upload", { method: "POST", body: fd })).text()).replace("/peer.php/", "/");
             document.body.innerHTML += \'<a target="_blank" href="\' + url + \'">\' + url + "</a>";
           }</script></body></html>';
 } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
