@@ -38,13 +38,13 @@ if ($segments[1] === "upload" && $_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 } elseif ($segments[1] === "index") {
-    echo `<!DOCTYPE html><html><head><style>body { background:#121212; } input, a { font-size:40px; display:block; color:#fff; }
+    echo '<!DOCTYPE html><html><head><style>body { background:#121212; } input, a { font-size:40px; display:block; color:#fff; }
           </style></head><body><input type="file" id="in" onchange="upload();" />
           <script>async function upload() {
             const fd = new FormData(); fd.append("file", document.getElementById("in").files[0]);
-            const url = await (await fetch(location.origin + "peer.php/peer/upload", { method: "POST", body: fd })).text();
-            document.body.innerHTML += '<a target="_blank" href="' + url + '">' + url + "</a>";
-          }</script></body></html>", "text/html");`;
+            const url = await (await fetch(location.origin + "/peer.php/peer/upload", { method: "POST", body: fd })).text();
+            document.body.innerHTML += \'<a target="_blank" href="\' + url + \'">\' + url + "</a>";
+          }</script></body></html>';
 } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $filepath = $uploadFolder . DIRECTORY_SEPARATOR . urldecode($segments[1]);
     if (file_exists($filepath)) {
