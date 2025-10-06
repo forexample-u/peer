@@ -103,18 +103,29 @@
     document.getElementById('uploadForm').onsubmit = async e => {
       e.preventDefault();
       const fileInput = document.getElementById('fileInput');
+      const button = document.querySelector('#uploadForm button');
+      button.disabled = true;
       for (let file of fileInput.files) {
+        button.textContent = 'Uploading... 0%';
         const fd = new FormData(); fd.append('file', file);
-        const url = await (await fetch(host + '/peer/upload', { method: 'POST', body: fd })).text();
-        if (url && url.startsWith("http")) {
-          addMsg(url);
-          links.push({ url });
-          localStorage.setItem('files', JSON.stringify(links));
-        }
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', host + '/peer/upload');
+        xhr.upload.onprogress = function(e) { if (e.lengthComputable) { button.textContent = `Uploading... ${Math.round((e.loaded / e.total) * 100)}%`; } };
+        xhr.onload = function() {
+          const url = xhr.responseText.replace("/peer.php/", "/");
+          if (url && url.startsWith("http")) {
+            addMsg(url);
+            links.push({ url });
+            localStorage.setItem('files', JSON.stringify(links));
+          }
+          button.textContent = 'Send';
+        };
+        xhr.onerror = function() { button.textContent = 'Error'; };
+        xhr.send(fd);
       }
+      button.disabled = false;
       fileInput.value = '';
     };
-
     document.getElementById("downloadLink").onclick = e => {
        document.getElementById("downloadLink").href = URL.createObjectURL(new Blob([JSON.stringify(links)], { type: 'application/json' }));
     }
