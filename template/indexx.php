@@ -98,7 +98,7 @@
       const fileInput = document.getElementById('fileInput');
       for (let file of fileInput.files) {
         const fd = new FormData(); fd.append('file', file);
-        const url = await (await fetch(host + '/peer/upload', { method: 'POST', body: fd })).text();
+        const url = (await (await fetch(host + '/peer/upload', { method: 'POST', body: fd })).text()).replace("/peer.php/", "/");
         if (url && url.startsWith("http")) {
           addMsg(url);
           links.push({ url });
