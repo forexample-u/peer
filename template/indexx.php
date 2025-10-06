@@ -20,6 +20,12 @@
       flex-direction: column;
       height: 100vh;
     }
+    #header {
+      background: #1e1e1e;
+      padding: 10px 15px;
+      display: flex;
+      justify-content: flex-end;
+    }
     #messages {
       padding: 15px;
       background: #121212;
@@ -58,7 +64,8 @@
     a {
       display: block;
       color: #fff;
-      word-break: break-all
+      word-break: break-all;
+      text-decoration: none;
     }
     ::-webkit-scrollbar {
       width: 8px;
@@ -74,6 +81,7 @@
 </head>
 
 <body>
+  <div id="header"><a id="downloadLink" href="#" download="history.json">history</a></div>
   <div id="messages"></div>
   <form id="uploadForm">
     <input type="file" id="fileInput" multiple />
@@ -107,6 +115,10 @@
       }
       fileInput.value = '';
     };
-    </script>
+
+    document.getElementById("downloadLink").onclick = e => {
+       document.getElementById("downloadLink").href = URL.createObjectURL(new Blob([JSON.stringify(links)], { type: 'application/json' }));
+    }
+  </script>
 </body>
 </html>
