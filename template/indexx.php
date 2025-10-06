@@ -76,7 +76,7 @@
 <body>
   <div id="messages"></div>
   <form id="uploadForm">
-    <input type="file" id="fileInput" />
+    <input type="file" id="fileInput" multiple />
     <button type="submit">Send</button>
   </form>
   <script>
@@ -89,21 +89,23 @@
       if (['mp3', 'wav'].includes(ext)) msg.innerHTML = '<audio controls><source src="' + url + '"></source></audio>';
       msg.className = 'message';
       msg.innerHTML += '<a target="_blank" href="' + url + '">' + url + '</a>';
-      document.getElementById('messages').appendChild(msg);
+      if (url && url.startsWith("http")) document.getElementById('messages').appendChild(msg);
     }
     let links = JSON.parse(localStorage.getItem('files') || '[]');
     links.forEach(({ url }) => addMsg(url));
     document.getElementById('uploadForm').onsubmit = async e => {
       e.preventDefault();
       const fileInput = document.getElementById('fileInput');
-      const fd = new FormData(); fd.append('file', fileInput.files[0]);
-      const url = await (await fetch(host + '/peer/upload', { method: 'POST', body: fd })).text();
-      if (url) {
-        fileInput.value = '';
-        addMsg(url);
-        links.push({ url });
-        localStorage.setItem('files', JSON.stringify(links));
+      for (let file of fileInput.files) {
+        const fd = new FormData(); fd.append('file', file);
+        const url = await (await fetch(host + '/peer/upload', { method: 'POST', body: fd })).text();
+        if (url && url.startsWith("http")) {
+          addMsg(url);
+          links.push({ url });
+          localStorage.setItem('files', JSON.stringify(links));
+        }
       }
+      fileInput.value = '';
     };
     </script>
 </body>
