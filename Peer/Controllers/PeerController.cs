@@ -48,12 +48,13 @@ public class PeerController : ControllerBase
     [HttpGet("index")]
     public IActionResult Index()
     {
-        return Content(@"<!DOCTYPE html><html><head><style>body { background:#121212; } input, a { font-size:40px; display:block; color:#fff; }
-            </style></head><body><input type=""file"" id=""in"" onchange=""upload();"" />
-            <script>async function upload() {
+        return Content(@"<!DOCTYPE html><html><head><style>body{background:#121212;}input,a{font-size:40px;display:block;color:#fff;}</style></head><body>
+            <input type=""file"" id=""in"" onchange=""upload();""><script>JSON.parse(localStorage.getItem(""files"") || ""[]"").forEach(url => document.body.innerHTML += '<a target=""_blank"" href=""'+url+'"">'+url+""</a>"");
+            async function upload() { 
               const fd = new FormData(); fd.append(""file"", document.getElementById(""in"").files[0]);
-              const url = await (await fetch(location.origin + ""/peer/upload"", { method: ""POST"", body: fd })).text();
-              document.body.innerHTML += '<a target=""_blank"" href=""' + url + '"">' + url + ""</a>"";
+              const url = await (await fetch(location.origin+""/peer/upload"", {method:""POST"",body:fd})).text();
+              document.body.innerHTML += '<a target=""_blank"" href=""'+url+'"">'+url+""</a>"";
+              localStorage.setItem(""files"", JSON.stringify([...JSON.parse(localStorage.getItem(""files"") || ""[]""), url]));
             }</script></body></html>", "text/html");
     }
 }
