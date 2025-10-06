@@ -81,7 +81,7 @@
 </head>
 
 <body>
-  <div id="header"><a id="downloadLink" href="#" download="history.json">history</a></div>
+  <div id="header"><a id="share" href="#">share</a></div>
   <div id="messages"></div>
   <form id="uploadForm">
     <input type="file" id="fileInput" multiple />
@@ -97,10 +97,20 @@
       if (['mp3', 'wav'].includes(ext)) msg.innerHTML = '<audio controls><source src="' + url + '"></source></audio>';
       msg.className = 'message';
       msg.innerHTML += '<a target="_blank" href="' + url + '">' + url + '</a>';
-      if (url && url.startsWith("http")) document.getElementById('messages').appendChild(msg);
+      if (url && (url.startsWith("http") || url.startsWith("file"))) document.getElementById('messages').appendChild(msg);
     }
     let links = JSON.parse(localStorage.getItem('files') || '[]');
-    links.forEach(({ url }) => addMsg(url));
+    window.addEventListener('load', async function () {
+      const params = new URLSearchParams(window.location.search);
+      const historyValue = params.get('history');
+      if (historyValue && historyValue.length > 2) {
+        document.getElementById('uploadForm').style.display = "none";
+        document.getElementById('header').style.display = "none";
+        const response = await fetch(host + "/peer/" + historyValue);
+        links = await response.json();
+      }
+      links.forEach(({ url }) => addMsg(url));
+    });
     document.getElementById('uploadForm').onsubmit = async e => {
       e.preventDefault();
       const fileInput = document.getElementById('fileInput');
@@ -127,8 +137,23 @@
       button.disabled = false;
       fileInput.value = '';
     };
-    document.getElementById("downloadLink").onclick = e => {
-       document.getElementById("downloadLink").href = URL.createObjectURL(new Blob([JSON.stringify(links)], { type: 'application/json' }));
+    document.getElementById("share").onclick = e => {
+      const randomName = 'history_' + Math.random().toString(36).substr(2, 9) + '.json';
+      const history = new Blob([JSON.stringify(links)], { type: 'application/json' });
+      const fd = new FormData(); fd.append('file', history, randomName);
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', host + '/peer/upload');
+      xhr.onload = async function () {
+        let url = xhr.responseText.replace("/peer.php/", "/");
+        if (url && url.startsWith("http")) {
+          url = window.location.origin + window.location.pathname + "?history=0_" + randomName;
+          addMsg(url);
+          links.push({ url });
+          localStorage.setItem('files', JSON.stringify(links));
+          await navigator.clipboard.writeText(url);
+        }
+      }
+      xhr.send(fd);
     }
   </script>
 </body>
