@@ -11,6 +11,7 @@
       background: #2b2b2b;
       border-radius: 20px;
       align-self: flex-start;
+      max-width: 75%;
     }
     body {
       margin: 0;
@@ -47,6 +48,7 @@
       text-align: center;
       color: #aaa;
       cursor: pointer;
+      width: 100%;
     }
     button {
       padding: 10px 20px;
