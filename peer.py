@@ -38,7 +38,7 @@ def upload():
 
 @app.route('/')
 def index():
-    return send_file(os.path.join('static', 'index.html'))
+    return send_file(os.path.join('static', os.path.join('peer', 'index.html')))
 
 if __name__ == '__main__':
     app.run(debug=True)
