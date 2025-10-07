@@ -98,30 +98,29 @@
       msg.innerHTML += '<a target="_blank" href="' + url + '">' + url + '</a>';
       if (url && (url.startsWith("http") || url.startsWith("file"))) document.getElementById('messages').appendChild(msg);
     }
+
     let links = JSON.parse(localStorage.getItem('files') || '[]');
     window.addEventListener('load', async function () {
-      const params = new URLSearchParams(window.location.search);
-      const historyValue = params.get('history');
+      const historyValue = new URLSearchParams(window.location.search).get('history');
       if (historyValue && historyValue.length > 2) {
         document.getElementById('uploadForm').style.display = "none";
         document.getElementById('header').style.display = "none";
-        const response = await fetch(host + "/peer/" + historyValue);
-        links = await response.json();
+        links = await (await fetch(host + "/peer/" + historyValue)).json();
       }
       links.forEach(({ url }) => addMsg(url));
     });
+
     document.getElementById('uploadForm').onsubmit = async e => {
       e.preventDefault();
       const fileInput = document.getElementById('fileInput');
       const button = document.querySelector('#uploadForm button');
       button.disabled = true;
       for (let file of fileInput.files) {
-        button.textContent = 'Uploading... 0%';
         const fd = new FormData(); fd.append('file', file);
         const xhr = new XMLHttpRequest();
         xhr.open('POST', host + '/peer/upload');
-        xhr.upload.onprogress = function(e) { if (e.lengthComputable) { button.textContent = `Uploading... ${Math.round((e.loaded / e.total) * 100)}%`; } };
-        xhr.onload = function() {
+        xhr.upload.onprogress = e => { if (e.lengthComputable) { button.textContent = `Uploading... ${Math.round((e.loaded / e.total) * 100)}%`; } };
+        xhr.onload = () => {
           const url = xhr.responseText.replace("/peer.php/", "/");
           if (url && url.startsWith("http")) {
             addMsg(url);
@@ -130,29 +129,25 @@
           }
           button.textContent = 'Send';
         };
-        xhr.onerror = function() { button.textContent = 'Error'; };
+        xhr.onerror = () => button.textContent = 'Error';
         xhr.send(fd);
       }
       button.disabled = false;
       fileInput.value = '';
-    };
-    document.getElementById("share").onclick = e => {
+    }
+
+    document.getElementById("share").onclick = async e => {
       const randomName = 'history_' + Math.random().toString(36).substr(2, 9) + '.json';
       const history = new Blob([JSON.stringify(links)], { type: 'application/json' });
       const fd = new FormData(); fd.append('file', history, randomName);
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', host + '/peer/upload');
-      xhr.onload = async function () {
-        let url = xhr.responseText.replace("/peer.php/", "/");
-        if (url && url.startsWith("http")) {
-          url = window.location.origin + window.location.pathname + "?history=0_" + randomName;
-          addMsg(url);
-          links.push({ url });
-          localStorage.setItem('files', JSON.stringify(links));
-          await navigator.clipboard.writeText(url);
-        }
+      let url = (await (await fetch(host + '/peer/upload', { method: 'POST', body: fd })).text()).replace("/peer.php/", "/");
+      if (url && url.startsWith("http")) {
+        url = window.location.origin + window.location.pathname + "?history=0_" + randomName;
+        addMsg(url);
+        links.push({ url });
+        localStorage.setItem('files', JSON.stringify(links));
+        await navigator.clipboard.writeText(url);
       }
-      xhr.send(fd);
     }
   </script>
 </body>

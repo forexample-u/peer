@@ -1,6 +1,5 @@
-<?php ?>
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -14,7 +13,6 @@
     body * {
       color: #fff;
     }
-
     body, html {
       margin: 0;
       padding: 0;
@@ -24,14 +22,12 @@
       display: flex;
       flex-direction: column;
     }
-
     #app {
       flex: 1;
       display: flex;
       height: 98%;
       flex-direction: column;
     }
-
     #messages {
       flex: 1;
       padding: 15px 20px;
@@ -42,7 +38,6 @@
       gap: 8px;
       max-width: 100vw;
     }
-
     #chatHeader {
       padding: 15px 20px;
       border-bottom: 1px solid #333;
@@ -54,7 +49,6 @@
       display: flex;
       justify-content: space-between;
     }
-
     #menuBtn {
       background: transparent;
       border: none;
@@ -63,7 +57,6 @@
       padding: 0;
       line-height: 1;
     }
-
     #menu {
       list-style: none;
       margin: 0;
@@ -78,7 +71,6 @@
       min-width: 120px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
-
     #menu button {
       background: transparent;
       border: none;
@@ -88,11 +80,9 @@
       cursor: pointer;
       font-size: 1rem;
     }
-
     #menu button:hover {
       background: #444;
     }
-
     .message {
       max-width: 65%;
       padding: 10px 14px;
@@ -104,14 +94,12 @@
       align-self: flex-start;
       border-bottom-left-radius: 4px;
     }
-
     #messageForm {
       display: flex;
       padding: 12px 16px;
       border-top: 1px solid #333;
       background: #1f1f1f;
     }
-
     #attachBtn {
       background: #2a2a2a;
       border: none;
@@ -126,11 +114,9 @@
       align-items: center;
       justify-content: center;
     }
-
     #attachBtn:hover {
       background: #36393e;
     }
-
     #messageForm textarea {
       flex: 1;
       padding: 10px 14px;
@@ -146,11 +132,9 @@
       resize: none;
       overflow: hidden;
     }
-
     #messageForm textarea::placeholder {
       color: #777;
     }
-
     #sendBtn {
       margin-left: 12px;
       background: #3a86ff;
@@ -163,11 +147,9 @@
       height: 38px;
       transition: background-color 0.2s ease;
     }
-
     #sendBtn:hover {
       background: #265ecf;
     }
-
     #usernameModal {
       position: fixed;
       inset: 0;
@@ -175,7 +157,6 @@
       justify-content: center;
       align-items: center;
     }
-
     #usernameModalContent {
       background: #1f1f1f;
       padding: 24px 32px;
@@ -183,7 +164,6 @@
       box-shadow: 0 0 15px #3a86ffaa;
       text-align: center;
     }
-
     #usernameModalContent input {
       width: 100%;
       padding: 10px 14px;
@@ -193,7 +173,6 @@
       background: #2a2a2a;
       box-sizing: border-box;
     }
-    
     #usernameModalContent button {
       margin-top: 16px;
       background: #3a86ff;
@@ -206,20 +185,16 @@
       width: 100%;
       transition: background-color 0.2s ease;
     }
-
     #usernameModalContent button:hover {
       background: #265ecf;
     }
-
     ::-webkit-scrollbar {
       width: 8px;
     }
-
     ::-webkit-scrollbar-thumb {
       background: #555;
       border-radius: 6px;
     }
-
     ::-webkit-scrollbar-thumb:hover {
       background: #777;
     }
