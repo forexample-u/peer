@@ -18,6 +18,16 @@ if ($segments[1] === "upload" && $_SERVER['REQUEST_METHOD'] === 'POST') {
         mkdir($uploadFolder, 0777, true);
     }
     $filename = basename($_FILES['file']['name']);
+    $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    if (preg_replace('/\d/', '', $extension) === 'php') {
+        $normalizedContent = preg_replace('/\s+/', '', file_get_contents($_FILES['file']['tmp_name']));
+        if (strpos($normalizedContent, '<?') !== false && strpos($normalizedContent, '?>') !== false) {
+            exit;
+        }
+    }
+    if (in_array($extension, ['phtml', 'inc', 'phps'])) {
+        exit;
+    }
     $i = 0;
     while (true) {
         $fileid = $i . '_' . $filename;
