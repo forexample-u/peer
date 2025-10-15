@@ -8,20 +8,35 @@
   <style>
     body { margin: 0; font-family: 'Segoe UI'; display: flex; flex-direction: column; height: 100vh; }
     .message { background: #2b2b2b; padding: 16px; border-radius: 20px; align-self: flex-start; max-width: 75%; }
-    #header  { background: #1e1e1e; padding: 10px 15px; display: flex; justify-content: flex-end; }
+    #header  { background: #1e1e1e; padding: 15px 20px; font-size: 1.2rem; user-select: none; position: relative; display: flex; justify-content: space-between; font-weight: 600; }
     #messages { background: #121212; padding: 15px; display: flex; gap: 12px; overflow-y: auto; flex-direction: column; flex-grow: 1; }
-    #uploadForm { background: #1e1e1e; padding: 15px; display: flex; gap: 10px; }
-    #fileInput { padding: 10px; flex-grow: 1; border: 2px dashed#555; text-align: center; color: #aaa; cursor: pointer; width: 100%; }
-    button { background: #667eea; padding: 10px 20px; border-radius: 20px; border: none; color: #fff; cursor: pointer; }
+    #uploadForm { background: #1e1e1e; padding: 12px 16px; display: flex; gap: 10px; }
+    #fileInput { padding: 8px; flex-grow: 1; border: 2px dashed#555; text-align: center; color: #aaa; cursor: pointer; width: 100%; }
+    button { background: #3a86ff; padding: 10px 20px; border-radius: 20px; border: none; color: #fff; cursor: pointer; font-weight: 600; font-size: 1rem; }
     audio, video, img { max-width: 100%; margin-bottom: 6px; }
     a { display: block; color: #fff; word-break: break-all; text-decoration: none; }
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-thumb { background: #555; border-radius: 6px; }
     ::-webkit-scrollbar-thumb:hover { background: #777; }
+    #menuBtn { background: transparent; border: none; font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1; font-weight: 400; }
+    #menu.hidden { display: none; }
+    #menu { position: absolute; top: 100%; right: 20px; background: #2c2c2c; border: 1px solid #444; border-radius: 4px; margin-top: 5px; min-width: 120px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); }
+    #menu ul { list-style: none; margin: 0; padding: 5px 0; }
+    #menu button { background: transparent; border: none; width: 100%; padding: 8px 15px; text-align: left; cursor: pointer; font-size: 1rem; font-weight: 400; }
   </style>
 </head>
 <body>
-  <div id="header"><a id="share" href="#">Share</a></div>
+  <div id="header" style="color: #fff;"><a href="/">Peer</a>
+    <button id="menuBtn" onclick="document.getElementById('menu').classList.toggle('hidden');" title="Menu" aria-label="Menu">☰</button>
+    <div id="menu" class="hidden">
+      <ul>
+        <li><button onclick="window.open('https://github.com/forexample-u/peer', '_blank')">Github</button></li>
+        <li><button id="share">Copy link</button></li>
+        <li><button onclick="window.location.href = '?links=1';">Links</button></li>
+        <li><button onclick="if (confirm('Delete messages?')) { localStorage.removeItem('files'); location.reload(); }">Clear messages</button></li>
+      </ul>
+    </div>
+  </div>
   <div id="messages"></div>
   <form id="uploadForm"><input type="file" id="fileInput" multiple /><button type="submit">Send</button></form>
   <script>
@@ -41,8 +56,16 @@
       const historyValue = new URLSearchParams(window.location.search).get('history');
       if (historyValue && historyValue.length > 2) {
         document.getElementById('uploadForm').style.display = 'none';
-        document.getElementById('header').style.display = 'none';
         links = await (await fetch(host + '/peer/' + historyValue)).json();
+        const url = location.href;
+        const savelinks = JSON.parse(localStorage.getItem("savelinks") || '[]');
+        if (!savelinks.some(x => x.url === url)) { savelinks.push({ url }); }
+        localStorage.setItem("savelinks", JSON.stringify(savelinks));
+      }
+      const linksValue = new URLSearchParams(window.location.search).get('links');
+      if (linksValue && linksValue.toString() == "1") {
+        document.getElementById('uploadForm').style.display = 'none';
+        links = JSON.parse(localStorage.getItem("savelinks") || '[]');
       }
       links.forEach(({ url }) => addMsg(url));
     });
@@ -55,7 +78,7 @@
         const fd = new FormData(); fd.append('file', file);
         const xhr = new XMLHttpRequest();
         xhr.open('POST', host + '/peer/upload');
-        xhr.upload.onprogress = e => { if (e.lengthComputable) { button.textContent = 'Uploading... ' + Math.round((e.loaded / e.total) * 100) + '%'; } };
+        xhr.upload.onprogress = e => { if (e.lengthComputable) { button.textContent = '' + Math.round((e.loaded / e.total) * 100) + '%'; } };
         xhr.onload = () => {
           const url = xhr.responseText.replace('/peer.php/', '/');
           if (url && url.startsWith('http')) {
@@ -82,8 +105,11 @@
         links.push({ url });
         localStorage.setItem('files', JSON.stringify(links));
         await navigator.clipboard.writeText(url);
+        const savelinks = JSON.parse(localStorage.getItem("savelinks") || '[]');
+        if (!savelinks.some(x => x.url === url)) { savelinks.push({ url }); }
+        localStorage.setItem("savelinks", JSON.stringify(savelinks));
       }
     }
-</script>
+  </script>
 </body>
 </html>
