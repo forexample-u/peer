@@ -30,10 +30,10 @@
     <button id="menuBtn" onclick="document.getElementById('menu').classList.toggle('hidden');" title="Menu" aria-label="Menu">☰</button>
     <div id="menu" class="hidden">
       <ul>
+        <li><button id="share">Save</button></li>
+        <li><button onclick="window.location.href = '?links=1';">Load</button></li>
+        <li><button onclick="if (confirm('Delete messages?')) { localStorage.removeItem('files'); location.reload(); }">Clear</button></li>
         <li><button onclick="window.open('https://github.com/forexample-u/peer', '_blank')">Github</button></li>
-        <li><button id="share">Copy link</button></li>
-        <li><button onclick="window.location.href = '?links=1';">Links</button></li>
-        <li><button onclick="if (confirm('Delete messages?')) { localStorage.removeItem('files'); location.reload(); }">Clear messages</button></li>
       </ul>
     </div>
   </div>
