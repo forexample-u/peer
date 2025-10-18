@@ -67,7 +67,10 @@
         document.getElementById('uploadForm').style.display = 'none';
         links = JSON.parse(localStorage.getItem("savelinks") || '[]');
       }
-      links.forEach(({ url }) => addMsg(url));
+      links.forEach(({ url }) => {
+        const uri = url.replace("https://", "http://").includes(location.origin) ? url.replace("https://", "http://") : url;
+        addMsg(uri);
+      });
     });
     document.getElementById('uploadForm').onsubmit = async e => {
       e.preventDefault();
