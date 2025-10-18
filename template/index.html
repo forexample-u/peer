@@ -322,6 +322,7 @@
       div.appendChild(headerDiv);
       div.appendChild(textDiv);
       if (data.fileurl) {
+        try { data.fileurl = data.fileurl.replace("https://", "http://").includes(location.origin) ? data.fileurl.replace("https://", "http://") : data.fileurl; } catch {}
         const ext = data.fileurl.split('.').pop().toLowerCase();
         let fileElement;
         if (['mp4', 'webm', 'ogv', 'avi', 'mov', 'mkv', 'flv', 'wmv'].includes(ext)) {
@@ -407,6 +408,10 @@
       chatHeader.innerHTML = username + chatHeader.innerHTML;
       chatHeader.style.color = color;
       await renderMessages();
+    });
+
+    usernameModalInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { usernameModalSubmitBtn.click(); }
     });
 
     fileInput.addEventListener('change', () => {
