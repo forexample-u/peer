@@ -12,7 +12,7 @@ def after_request(response):
 
 @app.route('/peer/<path:filename>')
 def static_file(filename):
-    return send_file(os.path.join('static', os.path.join('peer', filename)))
+    return send_file(os.path.join('static', 'peer', filename))
 
 @app.route('/peer/upload', methods=['POST'])
 def upload():
