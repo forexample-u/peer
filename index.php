@@ -1,120 +1,76 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Peer private chat</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='white'/%3E%3Ctext x='50' y='70' font-size='70' text-anchor='middle' font-family='Arial'%3EP%3C/text%3E%3C/svg%3E" type="image/svg+xml">
-  <style>
-    body { margin: 0; font-family: 'Segoe UI'; display: flex; flex-direction: column; height: 100vh; }
-    .message { background: #2b2b2b; padding: 16px; border-radius: 20px; align-self: flex-start; max-width: 75%; }
-    #header  { background: #1e1e1e; padding: 15px 20px; font-size: 1.2rem; user-select: none; position: relative; display: flex; justify-content: space-between; font-weight: 600; }
-    #messages { background: #121212; padding: 15px; display: flex; gap: 12px; overflow-y: auto; flex-direction: column; flex-grow: 1; }
-    #uploadForm { background: #1e1e1e; padding: 12px 16px; display: flex; gap: 10px; }
-    #fileInput { padding: 8px; flex-grow: 1; border: 2px dashed#555; text-align: center; color: #aaa; cursor: pointer; width: 100%; }
-    button { background: #3a86ff; padding: 10px 20px; border-radius: 20px; border: none; color: #fff; cursor: pointer; font-weight: 600; font-size: 1rem; }
-    audio, video, img { max-width: 100%; margin-bottom: 6px; }
-    a { display: block; color: #fff; word-break: break-all; text-decoration: none; }
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-thumb { background: #555; border-radius: 6px; }
-    ::-webkit-scrollbar-thumb:hover { background: #777; }
-    #menuBtn { background: transparent; border: none; font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1; font-weight: 400; }
-    #menu.hidden { display: none; }
-    #menu { position: absolute; top: 100%; right: 20px; background: #2c2c2c; border: 1px solid #444; border-radius: 4px; margin-top: 5px; min-width: 120px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); }
-    #menu ul { list-style: none; margin: 0; padding: 5px 0; }
-    #menu button { background: transparent; border: none; width: 100%; padding: 8px 15px; text-align: left; cursor: pointer; font-size: 1rem; font-weight: 400; }
-  </style>
-</head>
-<body>
-  <div id="header" style="color: #fff;"><a href="/">Peer</a>
-    <button id="menuBtn" onclick="document.getElementById('menu').classList.toggle('hidden');" title="Menu" aria-label="Menu">☰</button>
-    <div id="menu" class="hidden">
-      <ul>
-        <li><button id="share">Save</button></li>
-        <li><button onclick="window.location.href = '?links=1';">Load</button></li>
-        <li><button onclick="if (confirm('Delete messages?')) { localStorage.removeItem('files'); location.reload(); }">Clear</button></li>
-        <li><button onclick="window.open('https://github.com/forexample-u/peer', '_blank')">Github</button></li>
-      </ul>
-    </div>
-  </div>
-  <div id="messages"></div>
-  <form id="uploadForm"><input type="file" id="fileInput" multiple /><button type="submit">Send</button></form>
-  <script>
-    const host = location.origin + "/peer.php";
-    function addMsg(url) {
-      const ext = url.split('.').pop().toLowerCase();
-      const msg = document.createElement('div');
-      if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) msg.innerHTML = '<img src="' + url + '" />';
-      if (['mp4', 'mov'].includes(ext)) msg.innerHTML = '<video controls><source src="' + url + '"></source></video>';
-      if (['mp3', 'wav'].includes(ext)) msg.innerHTML = '<audio controls><source src="' + url + '"></source></audio>';
-      msg.className = 'message';
-      msg.innerHTML += '<a target="_blank" href="' + url + '">' + url + '</a>';
-      if (url && (url.startsWith('http') || url.startsWith("file"))) document.getElementById('messages').appendChild(msg);
+<?php
+$segments = explode('/', trim(strtok($_SERVER['REQUEST_URI'], '?'), '/'));
+$uploadFolder = __DIR__ . DIRECTORY_SEPARATOR . 'peer';
+if (count($segments) <= 1) {
+    $indexpath = $uploadFolder . DIRECTORY_SEPARATOR . 'index.html';
+    if (file_exists($indexpath)) {
+        echo file_get_contents($indexpath);
+    } else {
+        echo '<html><head></head><body><form action="/index.php/peer/upload" method="POST" enctype="multipart/form-data" target="_blank"><input type="file" name="file"><button type="submit">Save</button></form></body>';
     }
-    let links = JSON.parse(localStorage.getItem('files') || '[]');
-    window.addEventListener('load', async function () {
-      const historyValue = new URLSearchParams(window.location.search).get('history');
-      if (historyValue && historyValue.length > 2) {
-        document.getElementById('uploadForm').style.display = 'none';
-        links = await (await fetch(host + '/peer/' + historyValue)).json();
-        const url = location.href;
-        const savelinks = JSON.parse(localStorage.getItem("savelinks") || '[]');
-        if (!savelinks.some(x => x.url === url)) { savelinks.push({ url }); }
-        localStorage.setItem("savelinks", JSON.stringify(savelinks));
-      }
-      const linksValue = new URLSearchParams(window.location.search).get('links');
-      if (linksValue && linksValue.toString() == "1") {
-        document.getElementById('uploadForm').style.display = 'none';
-        links = JSON.parse(localStorage.getItem("savelinks") || '[]');
-      }
-      links.forEach(({ url }) => {
-        try {
-          const uri = url.replace("https://", "http://").includes(location.origin) ? url.replace("https://", "http://") : url;
-          addMsg(uri);
-        } catch {}
-      });
-    });
-    document.getElementById('uploadForm').onsubmit = async e => {
-      e.preventDefault();
-      const fileInput = document.getElementById('fileInput');
-      const button = document.querySelector('#uploadForm button');
-      button.disabled = true;
-      for (let file of fileInput.files) {
-        const fd = new FormData(); fd.append('file', file);
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', host + '/peer/upload');
-        xhr.upload.onprogress = e => { if (e.lengthComputable) { button.textContent = '' + Math.round((e.loaded / e.total) * 100) + '%'; } };
-        xhr.onload = () => {
-          const url = xhr.responseText.replace('/peer.php/', '/');
-          if (url && url.startsWith('http')) {
-            addMsg(url);
-            links.push({ url });
-            localStorage.setItem('files', JSON.stringify(links));
-          }
-          button.textContent = 'Send';
-        };
-        xhr.onerror = () => button.textContent = 'Error';
-        xhr.send(fd);
-      }
-      button.disabled = false;
-      fileInput.value = '';
+    exit;
+}
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST');
+header('Access-Control-Allow-Headers: Content-Type, Authorization');
+$addUrl = strpos($segments[0] ?? '', "php") ? ("/" . array_shift($segments)) : "";
+if (count($segments) !== 2 || $segments[0] !== "peer") {
+    http_response_code(404);
+    exit;
+}
+if ($segments[1] === "upload" && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+        http_response_code(400);
+        exit;
     }
-    document.getElementById('share').onclick = async e => {
-      const randomName = 'history_' + Math.random().toString(36).substr(2, 9) + '.json';
-      const history = new Blob([JSON.stringify(links)], { type: 'application/json' });
-      const fd = new FormData(); fd.append('file', history, randomName);
-      let url = (await (await fetch(host + '/peer/upload', { method: 'POST', body: fd })).text()).replace('/peer.php/', '/');
-      if (url && url.startsWith('http')) {
-        url = window.location.origin + window.location.pathname + '?history=0_' + randomName;
-        addMsg(url);
-        links.push({ url });
-        localStorage.setItem('files', JSON.stringify(links));
-        await navigator.clipboard.writeText(url);
-        const savelinks = JSON.parse(localStorage.getItem("savelinks") || '[]');
-        if (!savelinks.some(x => x.url === url)) { savelinks.push({ url }); }
-        localStorage.setItem("savelinks", JSON.stringify(savelinks));
-      }
+    if (!is_dir($uploadFolder)) {
+        mkdir($uploadFolder, 0777, true);
     }
-  </script>
-</body>
-</html>
+    $filename = basename($_FILES['file']['name']);
+    $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    if (in_array(preg_replace('/\d/', '', $extension), ['phtml', 'inc', 'phps', 'php'])) {
+        exit;
+    }
+    $i = 0;
+    while (true) {
+        $fileid = $i . '_' . $filename;
+        $filepath = $uploadFolder . DIRECTORY_SEPARATOR . $fileid;
+        $i += 1;
+        if (file_exists($filepath)) {
+            continue;
+        }
+        if (move_uploaded_file($_FILES['file']['tmp_name'], $filepath)) {
+            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+            http_response_code(200);
+            echo $protocol . $_SERVER['HTTP_HOST'] . $addUrl . "/peer/" . $fileid;
+            break;
+        }
+        if (!file_exists($filepath)) {
+            http_response_code(500);
+            break;
+        }
+    }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $filepath = $uploadFolder . DIRECTORY_SEPARATOR . urldecode($segments[1]);
+    if (file_exists($filepath)) {
+        $contentTypes = [
+            'jpeg'=>'image/jpeg', 'jpg'=>'image/jpeg', 'png'=>'image/png', 'gif'=>'image/gif', 'webp'=>'image/webp',
+            'bmp'=>'image/bmp', 'svg'=>'image/svg+xml', 'ico'=>'image/x-icon',
+            'mp4'=>'video/mp4', 'webm'=>'video/webm', 'mkv'=>'video/x-matroska',
+            'mov'=>'video/quicktime', 'ogv'=>'video/ogg', 'flv'=>'video/x-flv',
+            'mp3'=>'audio/mpeg','aac'=>'audio/aac','wav'=>'audio/wav', 'flac'=>'audio/flac',
+            'ogg'=>'audio/ogg', 'opus'=>'audio/opus', 'm4a'=>'audio/mp4',
+            'pdf'=>'application/pdf', 'zip'=>'application/zip', 'php'=>'application/x-php',
+            'html'=>'text/html', 'css'=>'text/css', 'js'=>'application/javascript',
+            'json'=>'application/json', 'xml'=>'application/xml', 'txt'=>'text/plain', 'csv'=>'text/csv',
+            'woff'=>'font/woff', 'woff2'=>'font/woff2',
+            'rar'=>'application/vnd.rar', 'torrent'=>'application/x-bittorrent'
+        ];
+        $extension = strtolower(pathinfo($filepath, PATHINFO_EXTENSION));
+        header('Content-Type: ' . (isset($contentTypes[$extension]) ? $contentTypes[$extension] : 'application/octet-stream'));
+        echo file_get_contents($filepath);
+    } else {
+        http_response_code(404);
+    }
+}
+?>
