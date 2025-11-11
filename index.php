@@ -27,7 +27,7 @@
 </head>
 <body>
   <div id="header" style="color: #fff;"><a href="/">Peer</a>
-    <button id="menuBtn" onclick="document.getElementById('menu').classList.toggle('hidden');" title="Menu" aria-label="Menu">=</button>
+    <button id="menuBtn" onclick="document.getElementById('menu').classList.toggle('hidden');" title="Menu" aria-label="Menu">☰</button>
     <div id="menu" class="hidden">
       <ul>
         <li><button id="share">Save</button></li>
@@ -68,8 +68,10 @@
         links = JSON.parse(localStorage.getItem("savelinks") || '[]');
       }
       links.forEach(({ url }) => {
-        const uri = url.replace("https://", "http://").includes(location.origin) ? url.replace("https://", "http://") : url;
-        addMsg(uri);
+        try {
+          const uri = url.replace("https://", "http://").includes(location.origin) ? url.replace("https://", "http://") : url;
+          addMsg(uri);
+        } catch {}
       });
     });
     document.getElementById('uploadForm').onsubmit = async e => {

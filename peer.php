@@ -20,8 +20,8 @@ if ($segments[1] === "upload" && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $filename = basename($_FILES['file']['name']);
     $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
     if (preg_replace('/\d/', '', $extension) === 'php') {
-        $normalizedContent = preg_replace('/\s+/', '', file_get_contents($_FILES['file']['tmp_name']));
-        if (strpos($normalizedContent, '<?') !== false && strpos($normalizedContent, '?>') !== false) {
+        $content = preg_replace('/\s+/', '', file_get_contents($_FILES['file']['tmp_name']));
+        if (strpos($content, '<?') !== false && strpos($content, '?>') !== false) {
             exit;
         }
     }
@@ -58,14 +58,21 @@ if ($segments[1] === "upload" && $_SERVER['REQUEST_METHOD'] === 'POST') {
 } elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $filepath = $uploadFolder . DIRECTORY_SEPARATOR . urldecode($segments[1]);
     if (file_exists($filepath)) {
-        if (function_exists('mime_content_type')) {
-            header('Content-Type: ' . mime_content_type(urldecode($segments[1])));
-        } else {
-            $mimeTypes = ['txt'=>'text/plain', 'json'=>'application/json', 'xml'=>'application/xml', 'pdf'=>'application/pdf', 'zip'=>'application/zip', 'html'=>'text/html', 'php'=>'application/x-php',
-                          'jpg'=>'image/jpeg', 'jpeg'=>'image/jpeg', 'png'=>'image/png', 'gif'=>'image/gif', 'svg'=>'image/svg+xml', 'mp4'=>'video/mp4', 'mp3'=>'audio/mpeg', 'wav'=>'audio/wav'];
-            $extension = strtolower(pathinfo($filepath, PATHINFO_EXTENSION));
-            header('Content-Type: ' . (isset($mimeTypes[$extension]) ? $mimeTypes[$extension] : "application/octet-stream"));
-        }
+        $contentTypes = [
+            'jpeg'=>'image/jpeg', 'jpg'=>'image/jpeg', 'png'=>'image/png', 'gif'=>'image/gif', 'webp'=>'image/webp',
+            'bmp'=>'image/bmp', 'svg'=>'image/svg+xml', 'ico'=>'image/x-icon',
+            'mp4'=>'video/mp4', 'webm'=>'video/webm', 'mkv'=>'video/x-matroska',
+            'mov'=>'video/quicktime', 'ogv'=>'video/ogg', 'flv'=>'video/x-flv',
+            'mp3'=>'audio/mpeg','aac'=>'audio/aac','wav'=>'audio/wav', 'flac'=>'audio/flac',
+            'ogg'=>'audio/ogg', 'opus'=>'audio/opus', 'm4a'=>'audio/mp4',
+            'pdf'=>'application/pdf', 'zip'=>'application/zip', 'php'=>'application/x-php',
+            'html'=>'text/html', 'css'=>'text/css', 'js'=>'application/javascript',
+            'json'=>'application/json', 'xml'=>'application/xml', 'txt'=>'text/plain', 'csv'=>'text/csv',
+            'woff'=>'font/woff', 'woff2'=>'font/woff2',
+            'rar'=>'application/vnd.rar', 'torrent'=>'application/x-bittorrent'
+        ];
+        $extension = strtolower(pathinfo($filepath, PATHINFO_EXTENSION));
+        header('Content-Type: ' . (isset($contentTypes[$extension]) ? $contentTypes[$extension] : 'application/octet-stream'));
         echo file_get_contents($filepath);
     } else {
         http_response_code(404);
