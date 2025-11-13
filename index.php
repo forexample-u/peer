@@ -43,6 +43,9 @@ if ($segments[0] === "peer" && $segments[1] === "upload" && $_SERVER['REQUEST_ME
     }
 } elseif ($segments[0] === "peer" && count($segments) <= 3 && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $filepath = $uploadpath . DIRECTORY_SEPARATOR . urldecode($segments[1]);
+    if (!file_exists($filepath)) {
+        $filepath = $uploadpath . DIRECTORY_SEPARATOR . $segments[1];
+    }
     if (file_exists($filepath)) {
         $contentTypes = [
             'jpeg'=>'image/jpeg', 'jpg'=>'image/jpeg', 'png'=>'image/png', 'gif'=>'image/gif', 'webp'=>'image/webp',
