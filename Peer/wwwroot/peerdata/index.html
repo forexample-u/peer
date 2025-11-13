@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8" />
@@ -68,8 +68,10 @@
         links = JSON.parse(localStorage.getItem("savelinks") || '[]');
       }
       links.forEach(({ url }) => {
-        const uri = url.replace("https://", "http://").includes(location.origin) ? url.replace("https://", "http://") : url;
-        addMsg(uri);
+        try {
+          const uri = url.replace("https://", "http://").includes(location.origin) ? url.replace("https://", "http://") : url;
+          addMsg(uri);
+        } catch {}
       });
     });
     document.getElementById('uploadForm').onsubmit = async e => {
