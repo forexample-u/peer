@@ -76,8 +76,7 @@ public class PeerController : ControllerBase
         if (contentTypes.TryGetValue(extension, out string contentTypeResult))
         {
             contentType = contentTypeResult;
-            if (contentType.StartsWith("text/") || contentType == "application/json" || contentType == "application/xml"
-                || contentType == "application/javascript" || contentType == "application/pdf")
+            if (contentType.StartsWith("text/") || contentType == "application/json" || contentType == "application/xml" || contentType == "application/javascript")
             {
                 contentType += ";charset=utf-8";
             }
