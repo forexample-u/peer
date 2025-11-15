@@ -76,7 +76,12 @@ public class PeerController : ControllerBase
         if (contentTypes.TryGetValue(extension, out string contentTypeResult))
         {
             contentType = contentTypeResult;
-            Response.Headers["Content-Disposition"] = $"inline; filename=\"{HttpUtility.UrlEncode(filename)}\"";
+            if (contentType.StartsWith("text/") || contentType == "application/json" || contentType == "application/xml"
+                || contentType == "application/javascript" || contentType == "application/pdf")
+            {
+                contentType += ";charset=utf-8";
+            }
+            Response.Headers["Content-Disposition"] = $"inline; filename=\"{Uri.EscapeDataString(filename)}\"";
         }
         return File(new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.Read), contentType, true);
     }
