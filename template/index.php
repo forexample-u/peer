@@ -228,7 +228,7 @@
   </div>
 
   <script>
-    const host = location.origin + "/peer.php";
+    const host = location.origin + "/index.php";
     const usernameModal = document.getElementById('usernameModal');
     const usernameModalInput = document.getElementById('usernameModalInput');
     const usernameModalSubmitBtn = document.getElementById('usernameModalSubmitBtn');

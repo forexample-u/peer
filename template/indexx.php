@@ -40,7 +40,7 @@
   <div id="messages"></div>
   <form id="uploadForm"><input type="file" id="fileInput" multiple /><button type="submit">Send</button></form>
   <script>
-    const host = location.origin + "/peer.php";
+    const host = location.origin + "/index.php";
     function addMsg(url) {
       const ext = url.split('.').pop().toLowerCase();
       const msg = document.createElement('div');
