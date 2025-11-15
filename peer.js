@@ -12,10 +12,10 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/peer', express.static(path.join(__dirname, 'peer')));
+app.use('/peer', express.static(path.join(__dirname, 'peerdata')));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'peer', 'index.html'));
+  res.sendFile(path.join(__dirname, 'peerdata', 'index.html'));
 });
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -23,7 +23,7 @@ app.post('/peer/upload', upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).send('');
   }
-  const uploadFolder = path.join(__dirname, 'peer');
+  const uploadFolder = path.join(__dirname, 'peerdata');
   fs.mkdirSync(uploadFolder, { recursive: true });
   let i = 0;
   let fileId;
