@@ -215,7 +215,7 @@
       <ul id="menu" style="display:none;">
         <li><button onclick="window.open('https://github.com/forexample-u/peer', '_blank')">Github</button></li>
         <li><button id="option2">Change wallpaper</button></li>
-        <li><button onclick="localStorage.removeItem('username'); localStorage.removeItem('color'); location.reload();">Change username</button></li>
+        <li><button onclick="document.getElementById('app').style.display = 'none'; document.getElementById('usernameModal').style = '';">Change username</button></li>
       </ul>
     </div>
     <div id="messages"></div>
@@ -241,7 +241,7 @@
     const chatHeader = document.getElementById('chatHeader');
 
     let color = localStorage.getItem("color") || "";
-    let username = localStorage.getItem("username") || "null";
+    let username = localStorage.getItem("username") || "";
     let dataid = 0;
     let intervalId = setInterval(renderMessages, 500);
 
@@ -389,12 +389,16 @@
         chatHeader.style.color = color;
         await renderMessages();
       } else {
-        app.style.display = "none";
-        usernameModal.style = '';
+        await setUsernameByModal();
       }
     });
 
     usernameModalSubmitBtn.addEventListener('click', async () => {
+      await setUsernameByModal();
+    });
+
+    async function setUsernameByModal() {
+      const lastUsername = username;
       const r = Math.floor(Math.random() * 156) + 100;
       const g = Math.floor(Math.random() * 156) + 100;
       const b = Math.floor(Math.random() * 156) + 100;
@@ -403,12 +407,12 @@
       username = usernameModalInput.value.trim() || ("user" + (28 + Math.floor(Math.random() * 50) * 2));
       usernameModal.style.display = 'none';
       app.style.display = '';
+      chatHeader.innerHTML = username + chatHeader.innerHTML.substring(lastUsername.length);
+      chatHeader.style.color = color;
       localStorage.setItem("username", username);
       localStorage.setItem("color", color);
-      chatHeader.innerHTML = username + chatHeader.innerHTML;
-      chatHeader.style.color = color;
       await renderMessages();
-    });
+    }
 
     usernameModalInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') { usernameModalSubmitBtn.click(); }
