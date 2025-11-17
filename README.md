@@ -1,11 +1,9 @@
 # Peer
 
-Free servers:
 | Lang   | Endpoint                                             | CORS    | Version |
 | ------ | ---------------------------------------------------- | ------- | ------- |
 | Python | https://forexample-u.github.io/peer/index.html       | Blocked | v 2.0   |
 | PHP    | http://peer.infinityfreeapp.com/peer/indexx.php      | Blocked | v 2.0   |
-| Python | https://peer-y8z2.onrender.com                       | Allowed | v 2.0   |
 | Python | https://peer1.pythonanywhere.com/peer/indexx.html    | Allowed | v 2.0   |
 | PHP    | https://peertest.liveblog365.com/peer/0_index.php    | Blocked | v 2.0   |
 | PHP    | https://peertest.liveblog365.com/start.php?talk=Open | Blocked | v 0.5B  |
@@ -27,11 +25,19 @@ There are many challenges such as:
 
 Peer helps solve these problems, so you only need to create a frontend for your application to work.
 
-All endpoints should be free of cors!
+# Rule
+
+When creating **Peer**, think about 3 ideas:
+1. Keep files as long as possible without deleting
+2. Make public links, without captcha, without api-keys
+3. Add peers.json
+
+If you want to join the peer network, add peer.json to another server and specify the data:
+```json
+{ "uri": "https://example.com", "isfreecors": true, "version": "v2.0", "gb": 11.3 }
+```
 
 ## API Endpoints
-
-Peer includes 2 API endpoints: <br />
 
 | Method | Endpoint                      | Parameters                 |
 | ------ | ----------------------------- | -------------------------- |
