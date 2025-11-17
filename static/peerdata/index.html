@@ -85,7 +85,7 @@
         xhr.open('POST', host + '/peer/upload');
         xhr.upload.onprogress = e => { if (e.lengthComputable) { button.textContent = '' + Math.round((e.loaded / e.total) * 100) + '%'; } };
         xhr.onload = () => {
-          const url = xhr.responseText.replace('/peer.php/', '/');
+          const url = xhr.responseText;
           if (url && url.startsWith('http')) {
             addMsg(url);
             links.push({ url });
@@ -103,7 +103,7 @@
       const randomName = 'history_' + Math.random().toString(36).substr(2, 9) + '.json';
       const history = new Blob([JSON.stringify(links)], { type: 'application/json' });
       const fd = new FormData(); fd.append('file', history, randomName);
-      let url = (await (await fetch(host + '/peer/upload', { method: 'POST', body: fd })).text()).replace('/peer.php/', '/');
+      let url = await (await fetch(host + '/peer/upload', { method: 'POST', body: fd })).text();
       if (url && url.startsWith('http')) {
         url = window.location.origin + window.location.pathname + '?history=0_' + randomName;
         addMsg(url);
