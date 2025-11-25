@@ -1,4 +1,5 @@
 from flask import Flask, request, send_file, current_app
+from urllib.parse import unquote
 import os
 
 app = Flask(__name__)
@@ -44,13 +45,16 @@ def upload():
                 continue
             return "", 200
 
-@app.route('/peer/<filename>')
+@app.route('/peer/<path:filename>')
 def load(filename):
-    if not os.path.exists(os.path.join('static', 'peerdata', filename)):
-        return "", 404
+    filepath = os.path.join('static', 'peerdata', filename)
+    if not os.path.exists(filepath):
+        filepath = os.path.join('static', 'peerdata', unquote(filename))
+        if not os.path.exists(filepath):
+            return "", 404
     _, extension = os.path.splitext(filename)
     content_type = content_types.get(extension.lower(), 'application/octet-stream')
-    return send_file(os.path.join('static', 'peerdata', filename), mimetype=content_type)
+    return send_file(filepath, mimetype=content_type)
 
 @app.route('/')
 def index():
