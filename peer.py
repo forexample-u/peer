@@ -2,6 +2,7 @@ from flask import Flask, Response, request, send_file, current_app
 import os
 import dropbox
 from dropbox.exceptions import AuthError, ApiError
+from urllib.parse import unquote
 
 REFRESH_TOKEN = "<YOUR REFRESH_TOKEN>" #read in readme how get refresh token, NOT ACCESS TOKEN!
 APP_KEY = "<YOUR APP_KEY>"
@@ -85,11 +86,14 @@ def upload():
                 continue
     return "", 200
 
-@app.route('/peer/<filename>')
+@app.route('/peer/<path:filename>')
 def load(filename):
     files = list_files()
     if not filename in files:
-        return "", 404
+        decoded_filename = unquote(filename)
+        if not decoded_filename in files:
+            return "", 404
+        filename = decoded_filename
     _, extension = os.path.splitext(filename)
     content_type = content_types.get(extension.lower(), 'application/octet-stream')
     return Response(get_file(filename), mimetype=content_type, headers={'Content-Disposition': f'inline; filename="{filename}"'})
