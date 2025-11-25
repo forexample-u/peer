@@ -1,45 +1,18 @@
 # Peer
 
-| Lang   | Endpoint                                             | CORS    | Version |
-| ------ | ---------------------------------------------------- | ------- | ------- |
-| Python | https://forexample-u.github.io/peer/index.html       | Blocked | v 2.0   |
-| PHP    | http://peer.infinityfreeapp.com/peer/indexx.php      | Blocked | v 2.0   |
-| Python | https://peer1.pythonanywhere.com/peer/indexx.html    | Allowed | v 2.0   |
-| PHP    | https://peertest.liveblog365.com/peer/0_index.php    | Blocked | v 2.0   |
-| PHP    | https://peertest.liveblog365.com/start.php?talk=Open | Blocked | v 0.5B  |
+How use it?
 
-CURL example:
-```bash
-curl -F "file=@C:/Users/user/Desktop/file.png" https://peer1.pythonanywhere.com/peer/upload
+1. Get APP_KEY and APP_SECRET:
+Create Dropbox app with select App Folder: https://dropbox.com/developers/apps/create
+Get your APP_KEY and APP_SECRET, and set your SCOPE create.file, read.file
+
+2. Get Refresh Token:
+Copy url with set APP_KEY: https://dropbox.com/oauth2/authorize?client_id=<APP_KEY>&token_access_type=offline&response_type=code
+
+Do post query to https://api.dropboxapi.com/oauth2/token with APP_KEY and APP_SECRET:
+```pyton
+import requests
+data = f'code={ACCESS_CODE_GENERATED_FROM_OAUTH2}&grant_type=authorization_code'
+response = requests.post('https://api.dropboxapi.com/oauth2/token', data=data, auth=(APP_KEY, APP_SECRET))
+print(json.dumps(json.loads(response.text), indent=2))
 ```
-
-**Peer** is the server hosting the files with the index
-
-For example, you can create a chat, a task tracker, or share files between users (peer-to-peer).
-
-There are many challenges such as:
-- building the backend
-- managing hosting
-- discovering users or servers in peer-to-peer apps
-- load balancing on the server
-
-Peer helps solve these problems, so you only need to create a frontend for your application to work.
-
-# Rule
-
-When creating **Peer**, think about 3 ideas:
-1. Keep files as long as possible without deleting
-2. Make public links, without captcha, without api-keys
-3. Add peers.json
-
-If you want to join the peer network, add peer.json to another server and specify the data:
-```json
-{ "uri": "https://example.com", "isfreecors": true, "version": "v2.0", "gb": 11.3 }
-```
-
-## API Endpoints
-
-| Method | Endpoint                      | Parameters                 |
-| ------ | ----------------------------- | -------------------------- |
-| POST   | {host}/peer/upload            | file (blob)                |
-| GET    | {host}/peer/{id}              | text (string)              |

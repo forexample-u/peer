@@ -1,5 +1,47 @@
-from flask import Flask, request, send_file, current_app
+from flask import Flask, Response, request, send_file, current_app
 import os
+import dropbox
+from dropbox.exceptions import AuthError, ApiError
+
+REFRESH_TOKEN = "<YOUR REFRESH_TOKEN>" #read in readme how get refresh token, NOT ACCESS TOKEN!
+APP_KEY = "<YOUR APP_KEY>"
+APP_SECRET = "<YOUR APP_SECRET>"
+
+dbx = None
+
+def connect_dropbox():
+    global dbx
+    dbx = dropbox.Dropbox(app_key=APP_KEY, app_secret=APP_SECRET, oauth2_refresh_token=REFRESH_TOKEN)
+    dbx.users_get_current_account()
+
+def upload_file(file, filename):
+    try:
+        dbx.files_upload(file, '/' + filename, mode=dropbox.files.WriteMode.overwrite)
+    except:
+        connect_dropbox()
+        dbx.files_upload(file, '/' + filename, mode=dropbox.files.WriteMode.overwrite)
+    
+def get_file(filename):
+    try:
+        metadata, response = dbx.files_download('/' + filename)
+        return response.content
+    except:
+        connect_dropbox()
+        metadata, response = dbx.files_download('/' + filename)
+        return response.content
+    
+def list_files(path=''):
+    json_files = None
+    try:
+        json_files = dbx.files_list_folder(path)
+    except:
+        connect_dropbox()
+        json_files = dbx.files_list_folder(path)
+    files = []
+    for entry in json_files.entries:
+        if isinstance(entry, dropbox.files.FileMetadata):
+            files.append(entry.name)
+    return files
 
 app = Flask(__name__)
 content_types = {
@@ -27,34 +69,35 @@ def upload():
     file = request.files['file']
     if file is None:
         return "", 200
-    uploadpath = os.path.join(current_app.root_path, 'static', 'peerdata')
-    os.makedirs(uploadpath, exist_ok=True)
+    files = list_files()
     i = 0
     while True:
         fileid = f"{i}_{file.filename}"
-        filepath = os.path.join(uploadpath, fileid)
         i += 1
-        if os.path.exists(filepath):
+        if fileid in files:
             continue
         try:
-            file.save(filepath)
+            upload_file(file.read(), fileid)
             return f"{request.host_url.rstrip('/')}/peer/{fileid}", 200
         except Exception:
-            if os.path.exists(filepath):
+            files = list_files()
+            if fileid in files:
                 continue
-            return "", 200
+    return "", 200
 
 @app.route('/peer/<filename>')
 def load(filename):
-    if not os.path.exists(os.path.join('static', 'peerdata', filename)):
+    files = list_files()
+    if not filename in files:
         return "", 404
     _, extension = os.path.splitext(filename)
     content_type = content_types.get(extension.lower(), 'application/octet-stream')
-    return send_file(os.path.join('static', 'peerdata', filename), mimetype=content_type)
+    return Response(get_file(filename), mimetype=content_type, headers={'Content-Disposition': f'inline; filename="{filename}"'})
 
 @app.route('/')
 def index():
     return send_file(os.path.join('static', 'peerdata', 'index.html'))
 
 if __name__ == '__main__':
+    connect_dropbox()
     app.run(host='0.0.0.0', debug=False)
