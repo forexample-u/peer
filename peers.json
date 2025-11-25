@@ -1,5 +1,5 @@
 [{ "uri": "https://peer1.pythonanywhere.com", "isfreecors": true, "version": "v2.0", "gb": 0.5 },
-{ "uri": "https://flask-hello-world-phi-liart.vercel.app", "isfreecors", "version": "v2.0", "gb": 2.0 },
+{ "uri": "https://flask-hello-world-phi-liart.vercel.app", "isfreecors": true, "version": "v2.0", "gb": 2.0 },
 { "uri": "https://peer-y8z2.onrender.com", "isfreecors": true, "version": "v2.0", "gb": 0.0 },
 { "uri": "https://peer.infinityfreeapp.com/index.php", "isfreecors": false, "version": "v2.0", "gb": 5.0 },
 { "uri": "https://peertest.liveblog365.com/index.php", "isfreecors": false, "version": "v2.0", "gb": 5.0 }]
