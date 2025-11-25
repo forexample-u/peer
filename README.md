@@ -2,14 +2,14 @@
 
 How use it?
 
-1. Get APP_KEY and APP_SECRET:
-Create Dropbox app with select App Folder: https://dropbox.com/developers/apps/create
+1. Get APP_KEY and APP_SECRET:<br>
+Create Dropbox app with select App Folder: https://dropbox.com/developers/apps/create <br>
 Get your APP_KEY and APP_SECRET, and set your SCOPE create.file, read.file
 
-2. Get Refresh Token:
+2. Get Refresh Token:<br>
 Copy url with set APP_KEY: https://dropbox.com/oauth2/authorize?client_id=<APP_KEY>&token_access_type=offline&response_type=code
 
-Do post query to https://api.dropboxapi.com/oauth2/token with APP_KEY and APP_SECRET:
+Do post query to https://api.dropboxapi.com/oauth2/token with APP_KEY and APP_SECRET:<br>
 ```pyton
 import requests
 data = f'code={ACCESS_CODE_GENERATED_FROM_OAUTH2}&grant_type=authorization_code'
