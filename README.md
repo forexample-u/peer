@@ -12,6 +12,9 @@ Set APP_KEY in url: https://dropbox.com/oauth2/authorize?client_id=<APP_KEY>&tok
 Post to https://api.dropboxapi.com/oauth2/token with APP_KEY and APP_SECRET:
 ```pyton
 import requests
+ACCESS_CODE_GENERATED_FROM_OAUTH2 = ""
+APP_KEY = ""
+APP_SECRET = ""
 data = f'code={ACCESS_CODE_GENERATED_FROM_OAUTH2}&grant_type=authorization_code'
 response = requests.post('https://api.dropboxapi.com/oauth2/token', data=data, auth=(APP_KEY, APP_SECRET))
 print(json.dumps(json.loads(response.text), indent=2))
