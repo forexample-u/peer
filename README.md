@@ -5,7 +5,9 @@
 | Python | https://forexample-u.github.io/peer/index.html       | Blocked | v 2.0   |
 | PHP    | http://peer.infinityfreeapp.com/peer/indexx.php      | Blocked | v 2.0   |
 | Python | https://peer1.pythonanywhere.com/peer/indexx.html    | Allowed | v 2.0   |
+| Python | https://flask-hello-world-phi-liart.vercel.app       | Allowed | v 2.0   |
 | PHP    | https://peertest.liveblog365.com/peer/0_index.php    | Blocked | v 2.0   |
+| PHP    | https://peer1.yzz.me/index.php                       | Blocked | v 2.0   |
 | PHP    | https://peertest.liveblog365.com/start.php?talk=Open | Blocked | v 0.5B  |
 
 CURL example:
