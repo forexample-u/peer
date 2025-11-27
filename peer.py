@@ -6,7 +6,7 @@ import urllib.request
 import requests
 
 FIREBASE_URL = "<YOUR_FIREBASE_URL>"
-WEB0X0ST_URL = "https://0x0.st"
+USER_AGENT = "forexampleu-peer/1.0"
 
 def saveurl(filename, url):
     full_url = f"{FIREBASE_URL}/0x0st.json"
@@ -30,7 +30,7 @@ def geturls():
         return result
 
 def uploadfile(file):
-    response = requests.post(WEB0X0ST_URL, files = { 'file': (file.filename, file.stream, file.mimetype) }, headers = { 'User-Agent': 'forexampleu-github/1.0' })
+    response = requests.post("https://0x0.st", files = { 'file': (file.filename, file.stream, file.mimetype) }, headers = { 'User-Agent': USER_AGENT })
     return response.text.strip()
 
 app = Flask(__name__)
