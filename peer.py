@@ -3,6 +3,15 @@ from urllib.parse import unquote
 import os
 import json
 import urllib.request
+import sys
+import asyncio
+# Fix for Python 3.11+ compatibility
+if sys.version_info >= (3, 11):
+    import types
+    if not hasattr(asyncio, 'coroutine'):
+        def coroutine(func):
+            return func
+        asyncio.coroutine = coroutine
 from mega import Mega
 from mega_downloader import download_mega_file
 
