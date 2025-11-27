@@ -37,7 +37,7 @@ When creating **Peer**, think about 3 ideas:
 
 If you want to join the peer network, add peer.json to another server and specify the data:
 ```json
-{ "uri": "https://example.com", "isfreecors": true, "version": "v2.0", "gb": 11.3 }
+{ "url": "https://example.com", "isfreecors": true, "version": "v2.0", "gb": 11.3 }
 ```
 
 ## API Endpoints
