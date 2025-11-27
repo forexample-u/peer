@@ -24,7 +24,7 @@ def after_request(response):
     return response
 
 @app.route('/peer/upload', methods=['POST'])
-def upload():
+def peerupload():
     file = request.files['file']
     if file is None:
         return "", 200
@@ -46,10 +46,10 @@ def upload():
             return "", 200
 
 @app.route('/peer/<path:filename>')
-def load(filename):
-    filepath = os.path.join('static', 'peerdata', filename)
+def peerload(filename):
+    filepath = os.path.join(current_app.root_path, 'static', 'peerdata', filename)
     if not os.path.exists(filepath):
-        filepath = os.path.join('static', 'peerdata', unquote(filename))
+        filepath = os.path.join(current_app.root_path, 'static', 'peerdata', unquote(filename))
         if not os.path.exists(filepath):
             return "", 404
     _, extension = os.path.splitext(filename)
@@ -57,7 +57,7 @@ def load(filename):
     return send_file(filepath, mimetype=content_type)
 
 @app.route('/')
-def index():
+def peerindex():
     return send_file(os.path.join('static', 'peerdata', 'index.html'))
 
 if __name__ == '__main__':
