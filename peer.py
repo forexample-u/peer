@@ -1,5 +1,37 @@
-from flask import Flask, request, send_file, current_app
+from flask import Flask, Response, request, send_file, current_app
+from urllib.parse import unquote
 import os
+import json
+import urllib.request
+import requests
+
+FIREBASE_URL = "<YOUR_FIREBASE_URL>"
+WEB0X0ST_URL = "https://0x0.st"
+
+def saveurl(filename, url):
+    full_url = f"{FIREBASE_URL}/0x0st.json"
+    json_data = json.dumps({ "name": filename, "url": url })
+    req = urllib.request.Request(url=full_url, data=json_data.encode('utf-8'), headers={'Content-Type': 'application/json'}, method='POST')
+    response_json = {}
+    with urllib.request.urlopen(req) as response:
+        response_json = json.loads(response.read().decode('utf-8'))
+        print(response_json)
+
+def geturls():
+    full_url = f"{FIREBASE_URL}/0x0st.json"
+    req = urllib.request.Request(url=full_url, method='GET')
+    with urllib.request.urlopen(req) as response:
+        response_data = response.read().decode('utf-8')
+        if response_data == 'null':
+            return {}
+        result = {}
+        for item_id, item_data in json.loads(response_data).items():
+            result[item_data.get('name')] = item_data.get('url')
+        return result
+
+def uploadfile(file):
+    response = requests.post(WEB0X0ST_URL, files = { 'file': (file.filename, file.stream, file.mimetype) }, headers = { 'User-Agent': 'forexampleu-github/1.0' })
+    return response.text.strip()
 
 app = Flask(__name__)
 content_types = {
@@ -27,30 +59,34 @@ def upload():
     file = request.files['file']
     if file is None:
         return "", 200
-    uploadpath = os.path.join(current_app.root_path, 'static', 'peerdata')
-    os.makedirs(uploadpath, exist_ok=True)
     i = 0
+    urls = geturls()
     while True:
         fileid = f"{i}_{file.filename}"
-        filepath = os.path.join(uploadpath, fileid)
         i += 1
-        if os.path.exists(filepath):
+        if urls.get(fileid):
             continue
         try:
-            file.save(filepath)
+            saveurl(fileid, uploadfile(file))
             return f"{request.host_url.rstrip('/')}/peer/{fileid}", 200
         except Exception:
-            if os.path.exists(filepath):
+            urls = geturls()
+            if urls.get(fileid):
                 continue
             return "", 200
 
-@app.route('/peer/<filename>')
+@app.route('/peer/<path:filename>')
 def load(filename):
-    if not os.path.exists(os.path.join('static', 'peerdata', filename)):
-        return "", 404
+    urls = geturls()
+    if urls.get(filename) is None:
+        filename = unquote(filename)
+        if urls.get(filename) is None:
+            return "", 404
     _, extension = os.path.splitext(filename)
     content_type = content_types.get(extension.lower(), 'application/octet-stream')
-    return send_file(os.path.join('static', 'peerdata', filename), mimetype=content_type)
+    fileurl = urls[filename]
+    response = requests.get(fileurl)
+    return Response(response.content, content_type=content_type, headers={ 'Content-Disposition': f'inline; filename="{filename}"' })
 
 @app.route('/')
 def index():
