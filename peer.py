@@ -3,13 +3,48 @@ from urllib.parse import unquote
 import os
 import json
 import urllib.request
-import requests
+from mega import Mega
+from mega_downloader import download_mega_file
 
-FIREBASE_URL = "<YOUR_FIREBASE_URL>"
-USER_AGENT = "forexampleu-peer/1.0"
+MEGA_EMAIL = '<YOUR_MEGA_EMAIL>'
+MEGA_PASSWORD = '<YOUR_MEGA_PASSWORD>'
+FIREBASE_URL = '<YOUR_FIREBASE_URL>'
+
+mega = Mega()
+
+def connect_mega():
+    mega.login(MEGA_EMAIL, MEGA_PASSWORD)
+
+def uploadfile(file, filename):
+    filepath = os.path.join(current_app.root_path, 'static', 'peerdata', filename)
+    file.save(filepath)
+    fileurl = None
+    try:
+        fileurl = mega.get_upload_link(mega.upload(filepath))
+    except:
+        connect_mega()
+        fileurl = mega.get_upload_link(mega.upload(filepath))
+    os.remove(filepath)
+    return fileurl
+
+def downloadfile(url):
+    filepath = None
+    try:
+        filepath = download_mega_file(url, os.path.join(current_app.root_path, 'static', 'peerdata'))
+    except:
+        connect_mega()
+        filepath = download_mega_file(url, os.path.join(current_app.root_path, 'static', 'peerdata'))
+    filebytes = None
+    try:
+        with open(filepath, 'rb') as file:
+            filebytes = file.read()
+    finally:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+    return filebytes
 
 def saveurl(filename, url):
-    full_url = f"{FIREBASE_URL}/0x0st.json"
+    full_url = f"{FIREBASE_URL}/mega.json"
     json_data = json.dumps({ "name": filename, "url": url })
     req = urllib.request.Request(url=full_url, data=json_data.encode('utf-8'), headers={'Content-Type': 'application/json'}, method='POST')
     response_json = {}
@@ -17,7 +52,7 @@ def saveurl(filename, url):
         response_json = json.loads(response.read().decode('utf-8'))
 
 def geturls():
-    full_url = f"{FIREBASE_URL}/0x0st.json"
+    full_url = f"{FIREBASE_URL}/mega.json"
     req = urllib.request.Request(url=full_url, method='GET')
     with urllib.request.urlopen(req) as response:
         response_data = response.read().decode('utf-8')
@@ -28,9 +63,6 @@ def geturls():
             result[item_data.get('name')] = item_data.get('url')
         return result
 
-def uploadfile(file):
-    response = requests.post("https://0x0.st", files = { 'file': (file.filename, file.stream, file.mimetype) }, headers = { 'User-Agent': USER_AGENT })
-    return response.text.strip()
 
 app = Flask(__name__)
 content_types = {
@@ -66,7 +98,7 @@ def upload():
         if urls.get(fileid):
             continue
         try:
-            saveurl(fileid, uploadfile(file))
+            saveurl(fileid, uploadfile(file, fileid))
             return f"{request.host_url.rstrip('/')}/peer/{fileid}", 200
         except Exception:
             urls = geturls()
@@ -84,12 +116,16 @@ def load(filename):
     _, extension = os.path.splitext(filename)
     content_type = content_types.get(extension.lower(), 'application/octet-stream')
     fileurl = urls[filename]
-    response = requests.get(fileurl)
-    return Response(response.content, content_type=content_type, headers={ 'Content-Disposition': f'inline; filename="{filename}"' })
+    content = downloadfile(fileurl)
+    return Response(content, content_type=content_type, headers={ 'Content-Disposition': f'inline; filename="{filename}"' })
 
 @app.route('/')
 def index():
     return send_file(os.path.join('static', 'peerdata', 'index.html'))
 
 if __name__ == '__main__':
+    try:
+        connect_mega()
+    except:
+        pass
     app.run(host='0.0.0.0', debug=False)

@@ -1,2 +1,3 @@
 Flask==3.1.1
-requests==2.31.0
+mega-lite==2.0.0
+mega.py==1.0.8
