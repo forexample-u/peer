@@ -15,7 +15,6 @@ def saveurl(filename, url):
     response_json = {}
     with urllib.request.urlopen(req) as response:
         response_json = json.loads(response.read().decode('utf-8'))
-        print(response_json)
 
 def geturls():
     full_url = f"{FIREBASE_URL}/0x0st.json"
