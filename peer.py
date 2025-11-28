@@ -12,7 +12,6 @@ if sys.version_info >= (3, 11):
         def coroutine(func):
             return func
         asyncio.coroutine = coroutine
-from mega import Mega
 from mega_downloader import download_mega_file
 
 MEGA_EMAIL = '<YOUR_MEGA_EMAIL>'
