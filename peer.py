@@ -67,7 +67,10 @@ def upload():
             continue
         try:
             saveurl(fileid, uploadfile(file))
-            return f"{request.host_url.rstrip('/')}/peer/{fileid}", 200
+            base_url = request.host_url
+            if request.headers.get('X-Forwarded-Proto') == 'https' or request.headers.get('X-Forwarded-Scheme') == 'https' or request.headers.get('X-Scheme') == 'https':
+                base_url = base_url.replace('http://', 'https://')
+            return f"{base_url.rstrip('/')}/peer/{fileid}", 200
         except Exception:
             urls = geturls()
             if urls.get(fileid):
