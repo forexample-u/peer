@@ -108,7 +108,10 @@ def upload():
             continue
         try:
             saveurl(fileid, uploadfile(file, fileid))
-            return f"{request.host_url.rstrip('/')}/peer/{fileid}", 200
+            base_url = request.host_url
+            if request.headers.get('X-Forwarded-Proto') == 'https' or request.headers.get('X-Forwarded-Scheme') == 'https' or request.headers.get('X-Scheme') == 'https':
+                base_url = base_url.replace('http://', 'https://')
+            return f"{base_url.rstrip('/')}/peer/{fileid}", 200
         except Exception:
             urls = geturls()
             if urls.get(fileid):
@@ -126,8 +129,6 @@ def load(filename):
     content_type = content_types.get(extension.lower(), 'application/octet-stream')
     fileurl = urls[filename]
     content = downloadfile(fileurl)
-    if (content_type == "application/octet-stream"):
-        return Response(content, content_type=content_type, headers={ 'Content-Disposition': f'attachment; filename="{filename}"' })
     return Response(content, content_type=content_type, headers={ 'Content-Disposition': f'inline; filename="{filename}"' })
 
 @app.route('/')
