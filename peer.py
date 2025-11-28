@@ -126,6 +126,8 @@ def load(filename):
     content_type = content_types.get(extension.lower(), 'application/octet-stream')
     fileurl = urls[filename]
     content = downloadfile(fileurl)
+    if (content_type == "application/octet-stream"):
+        return Response(content, content_type=content_type, headers={ 'Content-Disposition': f'attachment; filename="{filename}"' })
     return Response(content, content_type=content_type, headers={ 'Content-Disposition': f'inline; filename="{filename}"' })
 
 @app.route('/')
