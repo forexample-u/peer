@@ -13,6 +13,7 @@ if sys.version_info >= (3, 11):
             return func
         asyncio.coroutine = coroutine
 from mega_downloader import download_mega_file
+from mega import Mega
 
 MEGA_EMAIL = '<YOUR_MEGA_EMAIL>'
 MEGA_PASSWORD = '<YOUR_MEGA_PASSWORD>'
