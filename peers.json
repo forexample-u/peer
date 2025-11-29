@@ -1,6 +1,7 @@
 [{ "url": "https://peer1.pythonanywhere.com", "isfreecors": true, "version": "v2.0", "gb": 0.5 },
 { "url": "https://flask-hello-world-phi-liart.vercel.app", "isfreecors": true, "version": "v2.0", "gb": 2.0 },
 { "url": "https://forexampleu.pythonanywhere.com", "isfreecors": true, "version": "v2.0", "gb": 0.5 },
+{ "url": "https://peer2.pythonanywhere.com", "isfreecors": true, "version": "v2.0", "gb": 20.0 },
 { "url": "https://peer-y8z2.onrender.com", "isfreecors": false, "version": "v2.0", "gb": 20.0 },
 { "url": "https://peer.infinityfreeapp.com/index.php", "isfreecors": false, "version": "v2.0", "gb": 5.0 },
 { "url": "https://peertest.liveblog365.com/index.php", "isfreecors": false, "version": "v2.0", "gb": 5.0 },
