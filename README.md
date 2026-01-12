@@ -13,7 +13,6 @@ curl -F "file=@C:/Users/user/Desktop/file.png" https://peer1.pythonanywhere.com/
 
 | Lang   | Endpoint                                             | GB    | CORS    | Version |
 | ------ | ---------------------------------------------------- | ----- | ------- | ------- |
-| Python | https://forexample-u.github.io/peer/index.html       | 0.0   | Blocked | v 2.0   |
 | PHP    | http://peer.infinityfreeapp.com/peer/indexx.php      | 5.0   | Blocked | v 2.0   |
 | Python | https://peer1.pythonanywhere.com/peer/indexx.html    | 0.5   | Allowed | v 2.0   |
 | Python | https://flask-hello-world-phi-liart.vercel.app       | 2.0   | Allowed | v 2.0   |
