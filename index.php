@@ -2,6 +2,11 @@
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
+
+function generateGuid() {
+    return strtolower(sprintf('%04X%04X-%04X-%04X-%04X-%04X%04X%04X', mt_rand(0, 65535), mt_rand(0, 65535), mt_rand(0, 65535), mt_rand(16384, 20479), mt_rand(32768, 49151), mt_rand(0, 65535), mt_rand(0, 65535), mt_rand(0, 65535)));
+}
+
 $segments = explode('/', trim(strtok($_SERVER['REQUEST_URI'], '?'), '/'));
 $uploadpath = __DIR__ . DIRECTORY_SEPARATOR . 'peerdata';
 if (count($segments) <= 1) {
@@ -14,32 +19,15 @@ if ($segments[0] === "peer" && $segments[1] === "upload" && $_SERVER['REQUEST_ME
     if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
         exit;
     }
-    $filename = basename($_FILES['file']['name']);
-    if (in_array(preg_replace('/\d/', '', strtolower(pathinfo($filename, PATHINFO_EXTENSION))), ['phtml', 'inc', 'phps', 'php'])) {
-        exit;
-    }
     if (!is_dir($uploadpath)) {
         mkdir($uploadpath, 0777, true);
     }
-    $i = 0;
-    while (true) {
-        $fileid = $i . '_' . $filename;
-        $filepath = $uploadpath . DIRECTORY_SEPARATOR . $fileid;
-        $i += 1;
-        if (file_exists($filepath)) {
-            continue;
-        }
-        if (move_uploaded_file($_FILES['file']['tmp_name'], $filepath)) {
-            http_response_code(200);
-            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
-            echo $protocol . $_SERVER['HTTP_HOST'] . $addUrl . "/peer/" . $fileid;
-            break;
-        } else {
-            if (file_exists($filepath)) {
-                continue;
-            }
-            break;
-        }
+    $filename = generateGuid() . '.' . pathinfo(basename($_FILES['file']['name']), PATHINFO_EXTENSION);
+    $filepath = $uploadpath . DIRECTORY_SEPARATOR . $filename;
+    if (move_uploaded_file($_FILES['file']['tmp_name'], $filepath)) {
+        http_response_code(200);
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+        echo $protocol . $_SERVER['HTTP_HOST'] . $addUrl . "/peer/" . $filename;
     }
 } elseif ($segments[0] === "peer" && count($segments) <= 3 && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $filepath = $uploadpath . DIRECTORY_SEPARATOR . urldecode($segments[1]);
