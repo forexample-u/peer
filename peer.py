@@ -1,36 +1,17 @@
 from flask import Flask, Response, request, send_file, current_app
-from urllib.parse import unquote
 import os
-import json
 import urllib.request
 import requests
 
-FIREBASE_URL = "<YOUR_FIREBASE_URL>"
 USER_AGENT = "forexampleu-peer/1.0"
 
-def saveurl(filename, url):
-    full_url = f"{FIREBASE_URL}/0x0st.json"
-    json_data = json.dumps({ "name": filename, "url": url })
-    req = urllib.request.Request(url=full_url, data=json_data.encode('utf-8'), headers={'Content-Type': 'application/json'}, method='POST')
-    response_json = {}
-    with urllib.request.urlopen(req) as response:
-        response_json = json.loads(response.read().decode('utf-8'))
-
-def geturls():
-    full_url = f"{FIREBASE_URL}/0x0st.json"
-    req = urllib.request.Request(url=full_url, method='GET')
-    with urllib.request.urlopen(req) as response:
-        response_data = response.read().decode('utf-8')
-        if response_data == 'null':
-            return {}
-        result = {}
-        for item_id, item_data in json.loads(response_data).items():
-            result[item_data.get('name')] = item_data.get('url')
-        return result
-
 def uploadfile(file):
-    response = requests.post("https://0x0.st", files = { 'file': (file.filename, file.stream, file.mimetype) }, headers = { 'User-Agent': USER_AGENT })
+    response = requests.post("https://0x0.st", files = { 'file': (file.filename, file.stream, file.mimetype) }, headers={'User-Agent': USER_AGENT})
     return response.text.strip()
+
+def loadfile(filename):
+    response = requests.get(f"https://0x0.st/{filename}", headers={'User-Agent': USER_AGENT})
+    return response.content
 
 app = Flask(__name__)
 content_types = {
@@ -54,41 +35,24 @@ def after_request(response):
     return response
 
 @app.route('/peer/upload', methods=['POST'])
-def upload():
+def peerupload():
     file = request.files['file']
     if file is None:
         return "", 200
-    i = 0
-    urls = geturls()
-    while True:
-        fileid = f"{i}_{file.filename}"
-        i += 1
-        if urls.get(fileid):
-            continue
-        try:
-            saveurl(fileid, uploadfile(file))
-            base_url = request.host_url
-            if request.headers.get('X-Forwarded-Proto') == 'https' or request.headers.get('X-Forwarded-Scheme') == 'https' or request.headers.get('X-Scheme') == 'https':
-                base_url = base_url.replace('http://', 'https://')
-            return f"{base_url.rstrip('/')}/peer/{fileid}", 200
-        except Exception:
-            urls = geturls()
-            if urls.get(fileid):
-                continue
-            return "", 200
+    try:
+        return uploadfile(file)
+    except Exception:
+        return "", 200
 
 @app.route('/peer/<path:filename>')
-def load(filename):
-    urls = geturls()
-    if urls.get(filename) is None:
-        filename = unquote(filename)
-        if urls.get(filename) is None:
-            return "", 404
-    _, extension = os.path.splitext(filename)
-    content_type = content_types.get(extension.lower(), 'application/octet-stream')
-    fileurl = urls[filename]
-    response = requests.get(fileurl)
-    return Response(response.content, content_type=content_type, headers={ 'Content-Disposition': f'inline; filename="{filename}"' })
+def peerload(filename):
+    try:
+        extension = os.path.splitext(filename)[1]
+        content_type = content_types.get(extension.lower(), 'application/octet-stream')
+        content = loadfile(filename)
+        return Response(content, content_type=content_type, headers={'Content-Disposition': f'inline; filename="{filename}"'})
+    except Exception:
+        return "", 404
 
 @app.route('/')
 def index():
