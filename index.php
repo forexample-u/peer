@@ -11,6 +11,9 @@ $segments = explode('/', trim(strtok($_SERVER['REQUEST_URI'], '?'), '/'));
 $uploadpath = __DIR__ . DIRECTORY_SEPARATOR . 'peerdata';
 if (count($segments) <= 1) {
     $indexpath = $uploadpath . DIRECTORY_SEPARATOR . 'index.html';
+    if (!file_exists($indexpath)) {
+        $indexpath = __DIR__ . DIRECTORY_SEPARATOR . 'index.html';
+    }
     echo (file_exists($indexpath) ? file_get_contents($indexpath) : '<html><head></head><body><form action="/index.php/peer/upload" method="POST" enctype="multipart/form-data" target="_blank"><input type="file" name="file"><button type="submit">Save</button></form></body>');
     exit;
 }
