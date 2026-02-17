@@ -6,7 +6,7 @@ Upload and share files with a simple API. No tokens, no captcha, no accounts. Ju
 
 CURL example:
 ```bash
-curl -F "file=@C:/Users/user/Desktop/file.png" https://peer1.pythonanywhere.com/peer/upload
+curl -F "file=@C:/Users/user/Desktop/file.png" https://peerphp.vercel.app/peer/upload
 ```
 
 # Hosting
@@ -19,6 +19,8 @@ curl -F "file=@C:/Users/user/Desktop/file.png" https://peer1.pythonanywhere.com/
 | Python | https://peer2.pythonanywhere.com                     | 20.0  | Allowed | v 2.0   |
 | Python | https://forexampleu.pythonanywhere.com               | 0.5   | Allowed | v 2.0   |
 | Python | https://peer-y8z2.onrender.com                       | 20.0  | Blocked | v 2.0   |
+| Python | https://peerphp.vercel.app                           | 5.0   | Allowed | v 3.0   |
+| PHP    | https://peer1.liveblog365.com                        | 5.0   | Blocked | v 3.0   |
 | PHP    | https://peertest.liveblog365.com/peer/0_index.php    | 5.0   | Blocked | v 2.0   |
 | PHP    | https://peer1.yzz.me/index.php                       | 5.0   | Blocked | v 2.0   |
 
