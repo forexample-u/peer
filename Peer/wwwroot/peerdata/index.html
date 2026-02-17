@@ -105,7 +105,7 @@
       const fd = new FormData(); fd.append('file', history, randomName);
       let url = (await (await fetch(host + '/peer/upload', { method: 'POST', body: fd })).text()).replace('/peer.php/', '/');
       if (url && url.startsWith('http')) {
-        url = window.location.origin + window.location.pathname + '?history=0_' + randomName;
+        url = window.location.origin + window.location.pathname + '?history=' + url.split('/').pop();
         addMsg(url);
         links.push({ url });
         localStorage.setItem('files', JSON.stringify(links));
