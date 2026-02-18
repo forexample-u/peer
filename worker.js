@@ -19,6 +19,9 @@ const CORS_HEADERS = {
 
 export default {
   async fetch(request, env, ctx) {
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers: CORS_HEADERS });
+    }
     const url = new URL(request.url);
     const path = url.pathname;
     if (request.method === 'POST' && path === '/peer/upload') {
@@ -40,7 +43,7 @@ async function handleUpload(request, env) {
     const formData = await request.formData();
     const file = formData.get('file');
     if (!file) {
-      return new Response('No file uploaded', { status: 200, headers: CORS_HEADERS });
+      return new Response('', { status: 200, headers: CORS_HEADERS });
     }
     const fileExtension = getFileExtension(file.name);
     const filename = crypto.randomUUID() + fileExtension;
@@ -48,16 +51,9 @@ async function handleUpload(request, env) {
       httpMetadata: {
         contentType: file.type || CONTENT_TYPES[fileExtension] || 'application/octet-stream',
         contentDisposition: `inline; filename="${filename}"`,
-      },
-      customMetadata: {
-        originalName: file.name,
-        uploadDate: new Date().toISOString()
       }
     });
-    const protocol = request.headers.get('X-Forwarded-Proto') === 'https' || request.headers.get('X-Forwarded-Scheme') === 'https' || request.headers.get('X-Scheme') === 'https' ? 'https' : 'http';
-    const host = request.headers.get('Host');
-    const baseUrl = `${protocol}://${host}`;
-    return new Response(`${baseUrl}/peer/${filename}`, { status: 200, headers: CORS_HEADERS });
+    return new Response(`https://${request.headers.get('Host')}/peer/${filename}`, { status: 200, headers: CORS_HEADERS });
   } catch (error) {
     return new Response('', { status: 200, headers: CORS_HEADERS });
   }
