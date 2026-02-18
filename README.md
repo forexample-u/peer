@@ -20,6 +20,7 @@ curl -F "file=@C:/Users/user/Desktop/file.png" https://peerphp.vercel.app/peer/u
 | Python | https://forexampleu.pythonanywhere.com               | 0.5   | Allowed | v 2.0   |
 | Python | https://peer-y8z2.onrender.com                       | 20.0  | Blocked | v 2.0   |
 | Python | https://peerphp.vercel.app                           | 5.0   | Allowed | v 3.0   |
+| JS     | https://raspy-mud-673a.forexampleu.workers.dev       | 0.1   | Allowed | v 3.0   |
 | PHP    | https://peer1.liveblog365.com                        | 5.0   | Blocked | v 3.0   |
 | PHP    | https://peertest.liveblog365.com/peer/0_index.php    | 5.0   | Blocked | v 2.0   |
 | PHP    | https://peer1.yzz.me/index.php                       | 5.0   | Blocked | v 2.0   |
