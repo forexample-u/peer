@@ -14,16 +14,12 @@ curl -F "file=@C:/Users/user/Desktop/file.png" https://peerphp.vercel.app/peer/u
 | Lang   | Endpoint                                             | GB    | CORS    | Version |
 | ------ | ---------------------------------------------------- | ----- | ------- | ------- |
 | PHP    | http://peer.infinityfreeapp.com/peer/indexx.php      | 5.0   | Blocked | v 2.0   |
-| Python | https://peer1.pythonanywhere.com/peer/indexx.html    | 0.5   | Allowed | v 2.0   |
-| Python | https://flask-hello-world-phi-liart.vercel.app       | 2.0   | Allowed | v 2.0   |
-| Python | https://peer2.pythonanywhere.com                     | 20.0  | Allowed | v 2.0   |
-| Python | https://forexampleu.pythonanywhere.com               | 0.5   | Allowed | v 2.0   |
-| Python | https://peer-y8z2.onrender.com                       | 20.0  | Blocked | v 2.0   |
 | Python | https://peerphp.vercel.app                           | 5.0   | Allowed | v 3.0   |
+| Python | https://peer-y8z2.onrender.com                       | 20.0  | Blocked | v 2.0   |
 | PHP    | https://peer.byethost12.com                          | 5.0   | Blocked | v 3.0   |
+| Python | https://flask-hello-world-phi-liart.vercel.app       | 2.0   | Allowed | v 2.0   |
 | PHP    | https://peer1.liveblog365.com                        | 5.0   | Blocked | v 3.0   |
 | PHP    | https://peertest.liveblog365.com/peer/0_index.php    | 5.0   | Blocked | v 2.0   |
-| PHP    | https://peer1.yzz.me/index.php                       | 5.0   | Blocked | v 2.0   |
 
 # Rule
 
